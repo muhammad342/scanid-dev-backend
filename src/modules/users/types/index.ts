@@ -5,9 +5,7 @@ export interface PaginationFilters {
 }
 
 export interface UserFilters extends PaginationFilters {
-  systemEditionId?: string | undefined;
-  companyId?: string | undefined;
-  role?: string | undefined;
+  roleName?: string | undefined;
   isActive?: boolean | undefined;
   emailVerified?: boolean | undefined;
 }
@@ -18,11 +16,15 @@ export interface CreateUserData {
   firstName: string;
   lastName: string;
   phoneNumber?: string;
-  role?: 'super_admin' | 'edition_admin' | 'company_admin' | 'user' | 'delegate';
+  roles?: Array<{
+    roleName: 'super_admin' | 'edition_admin' | 'company_admin' | 'user' | 'delegate';
+    systemEditionId?: string;
+    companyId?: string;
+    channelId?: string;
+    expiresAt?: Date;
+  }>;
   isActive?: boolean;
   emailVerified?: boolean;
-  systemEditionId?: string;
-  companyId?: string;
   expirationDate?: Date;
   seatAssigned?: boolean;
   licenseType?: 'organizational_seat' | 'individual_parent' | 'individual_child' | 'none';
@@ -35,7 +37,6 @@ export interface UpdateUserData {
   firstName?: string;
   lastName?: string;
   phoneNumber?: string;
-  role?: 'super_admin' | 'edition_admin' | 'company_admin' | 'user' | 'delegate';
   isActive?: boolean;
   emailVerified?: boolean;
   expirationDate?: Date;

@@ -1,5 +1,6 @@
 import { body } from 'express-validator';
 import type { Request, Response } from 'express';
+import type { RequestWithContext } from '../../../shared/middleware/contextResolver.js';
 import { delegateAccessService } from '../services/DelegateAccessService.js';
 import { asyncHandler } from '../../../shared/middleware/errorHandler.js';
 import { 
@@ -111,8 +112,9 @@ export const deleteDelegateAccess = asyncHandler(async (req: Request, res: Respo
 });
 
 // Invite delegate admin
-export const inviteDelegateAdmin = asyncHandler(async (req: Request, res: Response) => {
+export const inviteDelegateAdmin = asyncHandler(async (req: RequestWithContext, res: Response) => {
   const { email, firstName, lastName, systemEditionId, permissions, expirationDate } = req.body;
+  const context = req.resolvedContext;
 
   if (!email || !firstName || !lastName || !systemEditionId) {
     sendBadRequest(res, 'Email, first name, last name, and system edition ID are required');
@@ -125,6 +127,8 @@ export const inviteDelegateAdmin = asyncHandler(async (req: Request, res: Respon
       firstName,
       lastName,
       systemEditionId,
+      ...(context?.companyId && { companyId: context.companyId }),
+      ...(context?.userId && { delegatorId: context.userId }),
       permissions,
       expirationDate,
     });

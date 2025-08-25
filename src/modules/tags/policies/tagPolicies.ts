@@ -5,8 +5,8 @@ import type { RequestWithContext } from '../../../shared/middleware/contextResol
  * Only super admin and edition admin can create tags
  */
 export const canCreateTag = (req: RequestWithContext): boolean => {
-  const { role } = req.resolvedContext || {};
-  return role === 'super_admin' || role === 'edition_admin';
+  const { roleName } = req.resolvedContext || {};
+  return roleName === 'super_admin' || roleName === 'edition_admin';
 };
 
 /**
@@ -22,8 +22,8 @@ export const canReadTag = (req: RequestWithContext): boolean => {
  * Only super admin and edition admin can update tags
  */
 export const canUpdateTag = (req: RequestWithContext): boolean => {
-  const { role } = req.resolvedContext || {};
-  return role === 'super_admin' || role === 'edition_admin';
+  const { roleName } = req.resolvedContext || {};
+  return roleName === 'super_admin' || roleName === 'edition_admin';
 };
 
 /**
@@ -31,8 +31,8 @@ export const canUpdateTag = (req: RequestWithContext): boolean => {
  * Only super admin and edition admin can delete tags
  */
 export const canDeleteTag = (req: RequestWithContext): boolean => {
-  const { role } = req.resolvedContext || {};
-  return role === 'super_admin' || role === 'edition_admin';
+  const { roleName } = req.resolvedContext || {};
+  return roleName === 'super_admin' || roleName === 'edition_admin';
 };
 
 /**
@@ -40,8 +40,8 @@ export const canDeleteTag = (req: RequestWithContext): boolean => {
  * Only super admin and edition admin can manage tag order
  */
 export const canManageTagOrder = (req: RequestWithContext): boolean => {
-  const { role } = req.resolvedContext || {};
-  return role === 'super_admin' || role === 'edition_admin';
+  const { roleName } = req.resolvedContext || {};
+  return roleName === 'super_admin' || roleName === 'edition_admin';
 };
 
 /**
@@ -49,8 +49,8 @@ export const canManageTagOrder = (req: RequestWithContext): boolean => {
  * Only super admin and edition admin can merge tags
  */
 export const canMergeTags = (req: RequestWithContext): boolean => {
-  const { role } = req.resolvedContext || {};
-  return role === 'super_admin' || role === 'edition_admin';
+  const { roleName } = req.resolvedContext || {};
+  return roleName === 'super_admin' || roleName === 'edition_admin';
 };
 
 /**

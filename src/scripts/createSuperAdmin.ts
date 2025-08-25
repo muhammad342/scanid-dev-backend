@@ -1,9 +1,9 @@
 import { connectDatabase } from '../config/database.js';
-import { userService } from '../modules/users/services/UserService.js';
+import { CreateUserDto, userService } from '../modules/users/services/UserService.js';
 import { logger } from '../shared/utils/logger.js';
 
 // Super admin user data
-const superAdminData = {
+const superAdminData: CreateUserDto = {
   email: 'muhammadbinashraf342@gmail.com',
   password: '123456',
   firstName: 'Muhammad',
@@ -11,6 +11,7 @@ const superAdminData = {
   isActive: true,
   emailVerified: true,
   phoneNumber: '+1234567890',
+  roles: [{ roleName: 'super_admin' }]
 };
 
 const createSuperAdmin = async () => {
@@ -25,19 +26,19 @@ const createSuperAdmin = async () => {
       logger.warn(`Super admin with email ${superAdminData.email} already exists`);
       console.log('Super admin already exists with the following details:');
       console.log('Email:', existingAdmin.email);
-      console.log('Role:', existingAdmin.role);
+      console.log('Role:', existingAdmin.activeRole?.roleName);
       console.log('Active:', existingAdmin.isActive);
       process.exit(0);
     }
 
     // Create super admin user
-    const superAdmin = await userService.createSuperAdmin(superAdminData);
+    const superAdmin = await userService.createUser(superAdminData);
     
     logger.info('Super admin created successfully');
     console.log('✅ Super admin created successfully!');
     console.log('📧 Email:', superAdmin.email);
     console.log('🔑 Password:', superAdminData.password);
-    console.log('👤 Role:', superAdmin.role);
+    console.log('👤 Role:', superAdmin.activeRole?.roleName);
     console.log('📱 Phone:', superAdmin.phoneNumber);
     console.log('');
     console.log('🚨 IMPORTANT: Please change the default password after first login!');

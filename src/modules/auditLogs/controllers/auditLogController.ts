@@ -33,7 +33,7 @@ export const getAuditLogs = asyncHandler(async (req: RequestWithContext, res: Re
     dateTo,
     systemEditionId: systemEditionId,
     companyId: companyId,
-    userId: userId || (req.user?.role === 'user' ? req.user?.id : undefined),
+    userId: userId || (context?.roleName === 'user' ? context?.userId : undefined),
   };
 
   const result = await auditLogService.getAuditLogs(filters);
@@ -70,7 +70,7 @@ export const exportAuditLogs = asyncHandler(async (req: RequestWithContext, res:
     dateTo,
     systemEditionId: systemEditionId,
     companyId: companyId,
-    userId: userId || (req.user?.role === 'user' ? req.user?.id : undefined),
+    userId: userId || (context?.roleName === 'user' ? context?.userId : undefined),
   };
 
   const auditLogs = await auditLogService.exportAuditLogs(filters);

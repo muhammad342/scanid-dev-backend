@@ -80,7 +80,6 @@ const upload = multer({
 router.put('/edition-admin', authorize('super_admin', 'edition_admin'), updateEditionAdminSystemEdition);
 router.get('/edition-admin', authorize('super_admin', 'edition_admin'), getEditionAdminSystemEdition);
 
-router.get('/:id/overview', authorize('super_admin', 'edition_admin'), getSystemEditionOverview);
 
 // System Edition CRUD (super_admin and edition_admin access)
 router.get('/', authorize('super_admin', 'edition_admin'), getAllSystemEditions);
@@ -90,6 +89,7 @@ router.put('/:id', authorize('super_admin', 'edition_admin'), updateSystemEditio
 router.delete('/:id', authorize('super_admin'), deleteSystemEdition);
 
 // System Edition Overview
+router.get('/:id/overview', authorize('super_admin', 'edition_admin'), getSystemEditionOverview);
 
 // System Edition Companies
 router.get('/:id/companies', authorize('super_admin', 'edition_admin'), getSystemEditionCompanies);

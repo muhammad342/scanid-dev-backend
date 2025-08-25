@@ -6,6 +6,9 @@ import { Tag } from './Tag/index.js'; // New unified Tag model
 import { CustomField } from './CustomField/index.js';
 import { DelegateAccess } from './DelegateAccess/index.js';
 import { AuditLog } from './AuditLog/index.js';
+import { Role } from './Role/index.js';
+import { Channel } from './Channel/index.js';
+import { UserRole } from './UserRole/index.js';
 
 // Define associations here
 // SystemEdition associations
@@ -84,15 +87,10 @@ Company.hasMany(AuditLog, {
   as: 'auditLogs' 
 });
 
-// User associations
-User.belongsTo(Company, { 
-  foreignKey: 'companyId', 
-  as: 'company' 
-});
-
-User.belongsTo(SystemEdition, { 
-  foreignKey: 'systemEditionId', 
-  as: 'systemEdition' 
+// User associations for active role
+User.belongsTo(UserRole, {
+  foreignKey: 'activeUserRoleId',
+  as: 'activeUserRole'
 });
 
 User.hasMany(Company, { 
@@ -196,6 +194,99 @@ AuditLog.belongsTo(User, {
   as: 'user' 
 });
 
+// Role associations
+Role.hasMany(UserRole, {
+  foreignKey: 'roleId',
+  as: 'userRoles'
+});
+
+// Channel associations
+Channel.belongsTo(SystemEdition, {
+  foreignKey: 'systemEditionId',
+  as: 'systemEdition'
+});
+
+Channel.belongsTo(User, {
+  foreignKey: 'channelAdminId',
+  as: 'channelAdmin'
+});
+
+Channel.hasMany(UserRole, {
+  foreignKey: 'channelId',
+  as: 'userRoles'
+});
+
+SystemEdition.hasMany(Channel, {
+  foreignKey: 'systemEditionId',
+  as: 'channels'
+});
+
+User.hasMany(Channel, {
+  foreignKey: 'channelAdminId',
+  as: 'managedChannels'
+});
+
+// UserRole associations
+UserRole.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
+UserRole.belongsTo(Role, {
+  foreignKey: 'roleId',
+  as: 'role'
+});
+
+UserRole.belongsTo(SystemEdition, {
+  foreignKey: 'systemEditionId',
+  as: 'systemEdition'
+});
+
+UserRole.belongsTo(Company, {
+  foreignKey: 'companyId',
+  as: 'company'
+});
+
+UserRole.belongsTo(Channel, {
+  foreignKey: 'channelId',
+  as: 'channel'
+});
+
+UserRole.belongsTo(User, {
+  foreignKey: 'grantedBy',
+  as: 'grantor'
+});
+
+UserRole.belongsTo(User, {
+  foreignKey: 'revokedBy',
+  as: 'revoker'
+});
+
+// User associations for roles
+User.hasMany(UserRole, {
+  foreignKey: 'userId',
+  as: 'userRoles'
+});
+
+User.belongsToMany(Role, {
+  through: UserRole,
+  foreignKey: 'userId',
+  otherKey: 'roleId',
+  as: 'roles'
+});
+
+// Company associations for roles
+Company.hasMany(UserRole, {
+  foreignKey: 'companyId',
+  as: 'userRoles'
+});
+
+// SystemEdition associations for roles
+SystemEdition.hasMany(UserRole, {
+  foreignKey: 'systemEditionId',
+  as: 'userRoles'
+});
+
 export { 
   User, 
   SystemEdition, 
@@ -204,7 +295,10 @@ export {
   Tag, // New unified Tag model
   CustomField,
   DelegateAccess, 
-  AuditLog 
+  AuditLog,
+  Role,
+  Channel,
+  UserRole
 };
 
 export default {
@@ -216,4 +310,7 @@ export default {
   CustomField,
   DelegateAccess,
   AuditLog,
+  Role,
+  Channel,
+  UserRole,
 }; 

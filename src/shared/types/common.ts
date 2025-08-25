@@ -1,4 +1,5 @@
 import type { Request } from 'express';
+import { UserAttributes } from '../../models/User/index';
 
 export interface DatabaseConfig {
   host: string;
@@ -72,27 +73,51 @@ export interface PaginatedResponse<T = any> extends ApiResponse<T> {
 export interface AuthenticatedUser {
   id: string;
   email: string;
-  role: string;
-  systemEditionId?: string;
-  companyId?: string;
+  firstName: string;
+  lastName: string;
+  activeUserRoleId?: string;
   // Emulation fields
   originalUser?: {
     id: string;
     email: string;
-    role: string;
     firstName: string;
     lastName: string;
+    activeUserRoleId?: string;
     // Support for nested emulation
     originalUser?: {
       id: string;
       email: string;
-      role: string;
       firstName: string;
       lastName: string;
+      activeUserRoleId?: string;
     };
     isEmulating?: boolean;
   };
   isEmulating?: boolean;
+  // Active role management methods
+  getCurrentContext(): Promise<{
+    roleId?: string;
+    roleName?: string;
+    systemEditionId?: string;
+    companyId?: string;
+    channelId?: string;
+  }>;
+  getActiveRole(): Promise<any | null>;
+  setActiveRole(userRoleId: string): Promise<boolean>;
+  clearActiveRole(): Promise<void>;
+  getAvailableRoles(): Promise<any[]>;
+  hasActiveRole(): Promise<boolean>;
+  validateActiveRole(): Promise<boolean>;
+  hasRole(roleName: string, options?: {
+    systemEditionId?: string;
+    companyId?: string;
+    channelId?: string;
+  }): Promise<boolean>;
+  isSuperAdmin(): Promise<boolean>;
+  isEditionAdmin(systemEditionId?: string): Promise<boolean>;
+  isCompanyAdmin(companyId?: string): Promise<boolean>;
+  isChannelAdmin(channelId?: string): Promise<boolean>;
+  getPlainData(): UserAttributes;
 }
 
 export interface RequestWithUser extends Request {

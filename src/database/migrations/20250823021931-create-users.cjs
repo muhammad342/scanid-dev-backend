@@ -1,12 +1,14 @@
 'use strict';
 
+/** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  up: async (queryInterface, Sequelize) => {
+  up: async function (queryInterface, Sequelize) {
     await queryInterface.createTable('users', {
       id: {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
+        allowNull: false,
       },
       email: {
         type: Sequelize.STRING,
@@ -25,11 +27,6 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      role: {
-        type: Sequelize.ENUM('super_admin', 'edition_admin', 'company_admin', 'user', 'delegate'),
-        allowNull: false,
-        defaultValue: 'user',
-      },
       is_active: {
         type: Sequelize.BOOLEAN,
         allowNull: false,
@@ -42,14 +39,6 @@ module.exports = {
       },
       phone_number: {
         type: Sequelize.STRING,
-        allowNull: true,
-      },
-      company_id: {
-        type: Sequelize.UUID,
-        allowNull: true,
-      },
-      system_edition_id: {
-        type: Sequelize.UUID,
         allowNull: true,
       },
       seat_assigned: {
@@ -78,6 +67,12 @@ module.exports = {
       created_by: {
         type: Sequelize.UUID,
         allowNull: true,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
       },
       created_at: {
         type: Sequelize.DATE,
@@ -97,9 +92,6 @@ module.exports = {
 
     // Add indexes
     await queryInterface.addIndex('users', ['email'], { unique: true });
-    await queryInterface.addIndex('users', ['role']);
-    await queryInterface.addIndex('users', ['company_id']);
-    await queryInterface.addIndex('users', ['system_edition_id']);
     await queryInterface.addIndex('users', ['is_active']);
     await queryInterface.addIndex('users', ['seat_assigned']);
     await queryInterface.addIndex('users', ['license_type']);
@@ -108,7 +100,7 @@ module.exports = {
     await queryInterface.addIndex('users', ['created_by']);
   },
 
-  down: async (queryInterface, Sequelize) => {
+  down: async function (queryInterface, Sequelize) {
     await queryInterface.dropTable('users');
   }
-}; 
+};

@@ -22,6 +22,7 @@
     "db:create": "npx sequelize-cli db:create",
     "db:drop": "npx sequelize-cli db:drop",
     "create-super-admin": "tsc && node dist/scripts/createSuperAdmin.js",
+    "create-roles": "tsc && node dist/scripts/createRoles.js",
     "prepare": "husky"
   },
   "keywords": [

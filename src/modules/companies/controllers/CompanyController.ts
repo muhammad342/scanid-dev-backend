@@ -158,7 +158,7 @@ export class CompanyController {
     }
 
     // Only super_admin, edition_admin, and company_admin can update PIN settings
-    if (!['super_admin', 'edition_admin', 'company_admin'].includes(context.role)) {
+    if (!['super_admin', 'edition_admin', 'company_admin'].includes(context.roleName || '')) {
       return sendForbidden(res, 'Insufficient permissions to update PIN settings');
     }
 

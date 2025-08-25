@@ -15,6 +15,297 @@ This is a production-ready Node.js backend application built with TypeScript, Ex
 - **Winston** - Logging
 - **Jest** - Testing framework
 
+## Roles & Authorization System
+
+### Overview
+The backend implements a sophisticated multi-role authorization system that allows users to have multiple roles across different contexts (system editions, companies, channels) simultaneously. This replaces the previous single-role system for enhanced flexibility and security.
+
+### Architecture Changes
+
+#### **Before (Legacy System)**
+- Users had a single `role` field in the `users` table
+- Role determined access level and context
+- Limited flexibility for users with multiple responsibilities
+
+#### **After (New Multi-Role System)**
+- Users can have multiple roles through a join table
+- Active role context determines current access level
+- Support for role switching and context-aware permissions
+
+### Database Schema
+
+#### **1. `roles` Table**
+```sql
+CREATE TABLE roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(50) UNIQUE NOT NULL,
+  description TEXT,
+  access_scope ENUM('GLOBAL', 'EDITION', 'COMPANY', 'SELF') NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Predefined Roles:**
+- `super_admin` - Full system access (GLOBAL scope)
+- `edition_admin` - Edition-level management (EDITION scope)
+- `company_admin` - Company-level management (COMPANY scope)
+- `channel_admin` - Channel-level management (COMPANY scope)
+- `user` - Standard user access (SELF scope)
+- `delegate` - Delegated access (SELF scope)
+
+#### **2. `user_roles` Join Table**
+```sql
+CREATE TABLE user_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role_id UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+  system_edition_id UUID REFERENCES system_editions(id) ON DELETE CASCADE,
+  company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+  channel_id UUID REFERENCES channels(id) ON DELETE CASCADE,
+  is_active BOOLEAN DEFAULT true,
+  granted_at TIMESTAMP DEFAULT NOW(),
+  granted_by UUID REFERENCES users(id),
+  revoked_at TIMESTAMP NULL,
+  revoked_by UUID REFERENCES users(id),
+  expires_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  
+  -- Constraints
+  UNIQUE(user_id, role_id, system_edition_id, company_id, channel_id),
+  CHECK(
+    (system_edition_id IS NOT NULL) OR 
+    (company_id IS NOT NULL) OR 
+    (channel_id IS NOT NULL) OR 
+    (role_id IN (SELECT id FROM roles WHERE access_scope = 'GLOBAL'))
+  )
+);
+```
+
+#### **3. `users` Table Updates**
+```sql
+-- Added field
+ALTER TABLE users ADD COLUMN active_user_role_id UUID REFERENCES user_roles(id) ON DELETE SET NULL;
+
+-- Removed fields (migrated to user_roles)
+-- ALTER TABLE users DROP COLUMN role;
+-- ALTER TABLE users DROP COLUMN company_id;
+-- ALTER TABLE users DROP COLUMN system_edition_id;
+```
+
+### Key Concepts
+
+#### **Active Role Context**
+- `users.active_user_role_id` points to the currently active role
+- Active role determines current access context (`systemEditionId`, `companyId`, `channelId`)
+- Users can switch between roles using the UserRoleController
+
+#### **Role Assignment Rules**
+- **Global Roles** (super_admin): No context required
+- **Edition Roles**: Must specify `system_edition_id`
+- **Company Roles**: Must specify `company_id` and optionally `system_edition_id`
+- **Channel Roles**: Must specify `channel_id` and optionally `company_id`
+
+#### **Permission Inheritance**
+- Higher-scoped roles inherit permissions from lower-scoped roles
+- Super admin has access to all resources
+- Edition admin has access to all companies within their edition
+- Company admin has access to all users within their company
+
+### API Usage Examples
+
+#### **1. Creating Users with Multiple Roles**
+```typescript
+// Create user with multiple roles
+const userData = {
+  email: 'user@example.com',
+  password: 'secure_password',
+  firstName: 'John',
+  lastName: 'Doe',
+  roles: [
+    {
+      roleName: 'company_admin',
+      companyId: 'company-uuid',
+      systemEditionId: 'edition-uuid'
+    },
+    {
+      roleName: 'user',
+      companyId: 'company-uuid'
+    }
+  ]
+};
+
+const user = await userService.createUser(userData);
+```
+
+#### **2. Fetching User Roles**
+```typescript
+// Get user's active role and context
+const activeRole = await user.getActiveRole();
+// Returns: { id, roleName, systemEditionId, companyId, channelId, expiresAt }
+
+// Get all available roles
+const availableRoles = await user.getAvailableRoles();
+// Returns: Array of all active, non-expired roles
+
+// Check if user has specific role
+const hasRole = await user.hasRole('company_admin');
+
+// Get plain user data (new method)
+const userData = user.getPlainData();
+// Returns: Plain UserAttributes object without Sequelize methods
+```
+
+#### **3. Role Switching**
+```typescript
+// Switch to a different role
+const success = await user.setActiveRole('user-role-uuid');
+
+// Clear active role
+await user.clearActiveRole();
+
+// Validate current active role
+const isValid = await user.validateActiveRole();
+```
+
+#### **4. Authorization in Controllers**
+```typescript
+// Old way (deprecated)
+if (context.role === 'company_admin') { ... }
+
+// New way
+if (context.roleName === 'company_admin') { ... }
+
+// Check role in UserResponse
+if (user.activeRole?.roleName === 'company_admin') { ... }
+```
+
+### Service Layer Changes
+
+#### **UserService Updates**
+- `createUser()` now creates `user_roles` entries instead of setting `role` field
+- `formatUserResponse()` returns `activeRole` and `availableRoles` instead of single `role`
+- All role-related queries now use `user_roles` table joins
+- `assignUserToCompany()` and `assignUserToSystemEdition()` deprecated in favor of role-based assignment
+
+#### **Context Resolution**
+- `contextResolver.ts` now derives context from active role
+- `ResolvedContext` interface includes `roleName` instead of `role`
+- Context validation ensures active role is valid and not expired
+
+### Breaking Changes
+
+#### **1. API Response Structure**
+```typescript
+// Before
+{
+  "id": "user-uuid",
+  "role": "company_admin",
+  "companyId": "company-uuid",
+  "systemEditionId": "edition-uuid"
+}
+
+// After
+{
+  "id": "user-uuid",
+  "activeRole": {
+    "id": "user-role-uuid",
+    "roleName": "company_admin",
+    "companyId": "company-uuid",
+    "systemEditionId": "edition-uuid"
+  },
+  "availableRoles": [
+    {
+      "id": "user-role-uuid",
+      "roleName": "company_admin",
+      "companyId": "company-uuid",
+      "systemEditionId": "edition-uuid",
+      "isActive": true
+    }
+  ]
+}
+```
+
+#### **2. Database Queries**
+```typescript
+// Before: Direct role filtering
+const users = await User.findAll({ where: { role: 'company_admin' } });
+
+// After: Role filtering through joins
+const users = await User.findAll({
+  include: [{
+    model: UserRole,
+    as: 'userRoles',
+    required: true,
+    include: [{ model: Role, as: 'role' }],
+    where: { isActive: true, revokedAt: null }
+  }]
+});
+```
+
+#### **3. Context Access**
+```typescript
+// Before
+const userRole = req.user.role;
+const companyId = req.user.companyId;
+
+// After
+const userRole = req.resolvedContext.roleName;
+const companyId = req.resolvedContext.companyId;
+```
+
+#### **4. Data Access Method Updates**
+```typescript
+// Before: Direct get({ plain: true }) usage
+const userData = this.get({ plain: true });
+
+// After: Use getPlainData() method for User models
+const userData = this.getPlainData();
+
+// Note: Other models still use get({ plain: true })
+const modelData = model.get({ plain: true });
+```
+
+### Migration Guide
+
+#### **1. Update DTOs and Interfaces**
+- Replace `role: string` with `roles: RoleAssignment[]`
+- Update validation to support role arrays
+- Modify response interfaces to include `activeRole` and `availableRoles`
+
+#### **2. Update Service Methods**
+- Replace direct role field access with role table queries
+- Update user creation to handle multiple roles
+- Modify filtering methods to use role joins
+
+#### **3. Update Controllers**
+- Change `context.role` to `context.roleName`
+- Update permission checks to use new role structure
+- Modify response formatting for new structure
+
+#### **4. Update Tests**
+- Mock new role structure in test data
+- Update assertions to check for `activeRole.roleName`
+- Test role switching and validation scenarios
+
+### Benefits of New System
+
+✅ **Flexibility**: Users can have multiple roles across contexts  
+✅ **Security**: Granular permission control with role expiration  
+✅ **Audit Trail**: Track role assignments, changes, and revocations  
+✅ **Scalability**: Support for complex organizational hierarchies  
+✅ **Context Awareness**: Active role determines current access level  
+✅ **Role Switching**: Users can switch between roles without re-authentication  
+
+### Future Enhancements
+
+- **Role Templates**: Predefined role combinations for common scenarios
+- **Conditional Permissions**: Role permissions based on user attributes
+- **Role Inheritance**: Hierarchical role relationships
+- **Temporary Roles**: Time-limited role assignments
+- **Role Analytics**: Usage patterns and permission optimization
+
 ## Current Folder Structure
 
 ```
@@ -137,8 +428,10 @@ The system currently supports the following roles:
 1. **Super Admin** (`super_admin`): Full system access, can manage all editions, create editions, and configure features
 2. **Edition Admin** (`edition_admin`): Limited access to assigned editions
 3. **Company Admin** (`company_admin`): Limited access to assigned company and users
+5. **Channel Admin** (`channel_admin`): Limited access to assigned channel and users
 4. **User** (`user`): Standard user with basic access
 5. **Delegate** (`delegate`): User who can act on behalf of another user
+
 
 ### Access Scopes
 - **GLOBAL**: Access to all resources (Super Admin)
@@ -198,27 +491,47 @@ The system uses a granular permission system with the following permissions:
   - Has many Users and DelegateAccess
 
 ### 3. **User**
-- **Purpose**: Enhanced user model supporting multiple roles
+- **Purpose**: Enhanced user model supporting multiple roles with active role context
 - **Key Fields**:
   - `id`: UUID primary key
   - `email`: Unique email address
   - `password`: Hashed password (bcrypt)
   - `firstName`, `lastName`: User names
-  - `role`: Enum ('super_admin', 'edition_admin', 'company_admin', 'user', 'delegate')
+  - `activeUserRoleId`: UUID reference to currently active role in user_roles table
   - `isActive`, `emailVerified`: Status flags
   - `phoneNumber`: Optional phone
-  - `companyId`, `systemEditionId`: Foreign keys
   - `seatAssigned`: Boolean for seat allocation
   - `licenseType`: Enum ('organizational_seat', 'individual_parent', 'individual_child', 'none')
   - `delegateCount`: Number of delegates
   - `lastLoginAt`, `expirationDate`: Tracking fields
   - `createdBy`: Reference to user who created this user
 - **Relationships**:
-  - Belongs to Company and SystemEdition
-  - Has many managed companies and created editions
+  - Has many UserRoles (through user_roles table)
+  - Has many Roles (through user_roles table)
+  - Has many managed companies and created editions (through active role context)
   - Has many created users (through createdBy)
   - Has many created custom fields (through createdBy)
   - Self-referential relationship for createdBy
+- **Role Management Methods**:
+  - `getActiveRole()`: Returns current active role with context
+  - `getAvailableRoles()`: Returns all active, non-expired roles
+  - `setActiveRole(userRoleId)`: Switches to specified role
+  - `clearActiveRole()`: Clears active role
+  - `validateActiveRole()`: Validates current active role
+  - `hasRole(roleName)`: Checks if user has specific role
+  - `getPlainData()`: Returns plain user data without Sequelize methods
+
+#### **Data Access Methods**:
+- `getPlainData()`: Returns plain user data as UserAttributes interface
+  - Use this method instead of `this.get({ plain: true })` for consistency
+  - Returns type-safe user data without Sequelize model methods
+  - Example: `const userData = user.getPlainData();`
+  - Provides better type safety and cleaner code
+- **Type Definitions**:
+  - `UserAttributes`: Exported interface defining the User model structure
+    - Can be imported and used in other modules: `import { UserAttributes } from '../models/User/index.js'`
+    - Provides type safety when working with user data
+    - Example: `const userData: UserAttributes = user.getPlainData();`
 
 ### 4. **SeatManagement**
 - **Purpose**: Pricing and license management for editions
@@ -274,7 +587,39 @@ The system uses a granular permission system with the following permissions:
 - **Relationships**:
   - Belongs to SystemEdition, Company, and Users (delegator/delegate)
 
-### 8. **AuditLog**
+### 8. **Role**
+- **Purpose**: Defines available roles and their access scopes
+- **Key Fields**:
+  - `id`: UUID primary key
+  - `name`: Role name (unique, e.g., 'super_admin', 'company_admin')
+  - `description`: Human-readable role description
+  - `accessScope`: Enum ('GLOBAL', 'EDITION', 'COMPANY', 'SELF') defining permission scope
+  - `createdAt`, `updatedAt`: Timestamps
+- **Relationships**:
+  - Has many UserRoles
+  - Referenced by User through UserRole
+
+### 9. **UserRole**
+- **Purpose**: Maps users to roles with context and lifecycle management
+- **Key Fields**:
+  - `id`: UUID primary key
+  - `userId`: Reference to User
+  - `roleId`: Reference to Role
+  - `systemEditionId`: Optional reference to SystemEdition (for edition-scoped roles)
+  - `companyId`: Optional reference to Company (for company-scoped roles)
+  - `channelId`: Optional reference to Channel (for channel-scoped roles)
+  - `isActive`: Boolean indicating if role is currently active
+  - `grantedAt`: When role was assigned
+  - `grantedBy`: User who assigned the role
+  - `revokedAt`: When role was revoked (NULL if active)
+  - `revokedBy`: User who revoked the role
+  - `expiresAt`: Optional expiration date
+  - `createdAt`, `updatedAt`: Timestamps
+- **Relationships**:
+  - Belongs to User, Role, SystemEdition, Company, and Channel
+  - Referenced by User.activeUserRoleId for active role context
+
+### 10. **AuditLog**
 - **Purpose**: System activity tracking
 - **Key Fields**:
   - `id`: UUID primary key
@@ -286,6 +631,28 @@ The system uses a granular permission system with the following permissions:
   - `metadata`: JSONB for additional data
 - **Relationships**:
   - Belongs to SystemEdition, Company, and User
+
+## Exported Interfaces and Type Definitions
+
+### **UserAttributes Interface**
+- **Location**: `src/models/User/index.ts`
+- **Export**: `export interface UserAttributes`
+- **Purpose**: Defines the complete structure of User model data
+- **Usage**: Import in other modules for type safety
+- **Example**:
+  ```typescript
+  import { UserAttributes } from '../models/User/index.js';
+  
+  // Type-safe user data handling
+  const userData: UserAttributes = user.getPlainData();
+  const userId: string = userData.id;
+  const userEmail: string = userData.email;
+  ```
+- **Benefits**:
+  - Provides compile-time type checking
+  - Enables better IDE support and autocomplete
+  - Ensures consistency across the codebase
+  - Makes refactoring safer and easier
 
 ### 9. **DocumentTag** (Legacy)
 - **Purpose**: Legacy document tagging system (being migrated to unified Tag model)
@@ -320,18 +687,35 @@ The system uses a granular permission system with the following permissions:
 
 ### Sequelize Model Data Handling
 1. **Accessing Model Data**
-   - Always use `get({ plain: true })` to convert Sequelize model instances to plain JavaScript objects
+   - **User Models**: Use `getPlainData()` method for consistent data access
+   - **Other Models**: Use `get({ plain: true })` to convert Sequelize model instances to plain JavaScript objects
    - This ensures consistent data access and removes Sequelize-specific metadata
    - Example:
      ```typescript
+     // For User models
+     const userData = user.getPlainData();
+     
+     // For other models
      const model = await Model.findByPk(id);
      return model.get({ plain: true });
      ```
+
+2. **Best Practices for Data Access**
+   - **User Models**: Always use `getPlainData()` for consistency and type safety
+   - **Other Models**: Use `get({ plain: true })` when you need plain data
+   - **Performance**: Both methods are equivalent in performance
+   - **Type Safety**: `getPlainData()` provides better TypeScript support for User models
+   - **Code Consistency**: Using the appropriate method makes code more maintainable
 
 2. **Handling Multiple Records**
    - When returning multiple records, map them to plain objects
    - Example:
      ```typescript
+     // For User models
+     const users = await User.findAll();
+     return users.map(user => user.getPlainData());
+     
+     // For other models
      const models = await Model.findAll();
      return models.map(model => model.get({ plain: true }));
      ```
@@ -340,6 +724,12 @@ The system uses a granular permission system with the following permissions:
    - After creating a record, convert it to a plain object before accessing properties
    - Example:
      ```typescript
+     // For User models
+     const newUser = await User.create(data);
+     const plainUser = newUser.getPlainData();
+     return plainUser.id;
+     
+     // For other models
      const newModel = await Model.create(data);
      const plainModel = newModel.get({ plain: true });
      return plainModel.id;
@@ -349,6 +739,12 @@ The system uses a granular permission system with the following permissions:
    - After updating, fetch and convert to plain object before returning
    - Example:
      ```typescript
+     // For User models
+     await user.update(data);
+     const updated = await User.findByPk(id);
+     return updated.getPlainData();
+     
+     // For other models
      await model.update(data);
      const updated = await Model.findByPk(id);
      return updated.get({ plain: true });
@@ -428,6 +824,14 @@ The system uses a granular permission system with the following permissions:
 - `POST /users` - Create user (register)
 - `PUT /users/:id` - Update user
 - `DELETE /users/:id` - Delete user
+
+### **User Role Management**
+- `GET /user-roles/available` - Get user's available roles
+- `GET /user-roles/active` - Get current active role
+- `POST /user-roles/active` - Set active role
+- `DELETE /user-roles/active` - Clear active role
+- `POST /user-roles/switch` - Quick role switching with validation
+- `GET /user-roles/validate` - Validate current active role
 
 ### **Custom Fields**
 
@@ -558,9 +962,17 @@ The system uses a granular permission system with the following permissions:
 - Company branding configuration
 
 #### **Users Module**
-- User CRUD operations
-- User role management
+- User CRUD operations with multi-role support
+- Role assignment and management through UserRoleController
+- Active role switching and context management
 - User profile management
+- Role-based permission validation
+- **New Endpoints**:
+  - `GET /user-roles/available` - Get user's available roles
+  - `GET /user-roles/active` - Get current active role
+  - `POST /user-roles/active` - Set active role
+  - `DELETE /user-roles/active` - Clear active role
+  - `POST /user-roles/switch` - Quick role switching
 
 #### **Delegates Module**
 - Delegate access management
@@ -609,22 +1021,36 @@ The codebase implements a centralized context resolution pattern to handle role-
    - Can access any company/edition
    - Company/Edition ID taken from request params or query
    - No additional validation needed
+   - Context derived from active role or request parameters
 
 2. **Edition Admin**
    - Restricted to their assigned edition
    - Can only access companies within their edition
-   - System edition ID comes from their JWT token
+   - System edition ID comes from active role context
    - Company access requires validation against their edition
 
 3. **Company Admin**
    - Restricted to their assigned company
-   - Company ID comes from their JWT token
-   - System edition ID inherited from their company
+   - Company ID comes from active role context
+   - System edition ID inherited from their company context
 
 4. **Regular User**
    - Restricted to their assigned company
-   - Company ID comes from their JWT token
-   - System edition ID inherited from their company
+   - Company ID comes from active role context
+   - System edition ID inherited from their company context
+
+### Active Role Context Resolution
+
+The system now resolves context through the user's active role:
+
+```typescript
+// Context resolution flow
+1. User authenticates with JWT containing activeUserRoleId
+2. ContextResolver middleware fetches active role from user_roles table
+3. Context derived from active role: { roleName, systemEditionId, companyId, channelId }
+4. Permission checks use resolved context for access control
+5. All subsequent operations use active role context
+```
 
 ### Implementation in Controllers
 
@@ -778,6 +1204,12 @@ export class ResourceController {
 - Adds `created_by` field to users table for tracking user creation
 - Creates index on `created_by` field for performance
 - Supports audit trail for user management
+
+### **Multi-Role System Migrations**
+- **015-create-roles-and-user-roles.cjs**: Creates `roles` and `user_roles` tables with proper constraints
+- **016-add-active-user-role-to-users.cjs**: Adds `active_user_role_id` field to users table
+- **017-remove-redundant-context-fields-from-users.cjs**: Removes legacy `company_id` and `system_edition_id` fields
+- **018-seed-default-roles.cjs**: Seeds predefined roles (super_admin, edition_admin, company_admin, channel_admin, user, delegate)
 
 ## Security Features
 

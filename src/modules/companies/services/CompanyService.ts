@@ -1,6 +1,8 @@
 import { WhereOptions, Op } from 'sequelize';
 import { Company } from '../../../models/Company/index.js';
 import { User } from '../../../models/User/index.js';
+import { UserRole } from '../../../models/UserRole/index.js';
+import { Role } from '../../../models/Role/index.js';
 import { SystemEdition } from '../../../models/SystemEdition/index.js';
 import { logger } from '../../../shared/utils/logger.js';
 import type { 
@@ -145,9 +147,30 @@ export class CompanyService {
   // Get company users with context validation
   async getCompanyUsers(filters: CompanyUserFilters): Promise<{ users: any[]; total: number; totalPages: number }> {
     const offset = ((filters.page || 1) - 1) * (filters.limit || 10);
-    const whereClause: WhereOptions = {
-      companyId: filters.companyId,
+    const whereClause: WhereOptions = {};
+
+    // Set up user roles include for company filtering
+    const userRoleInclude: any = {
+      model: UserRole,
+      as: 'userRoles',
+      required: true, // Users must have roles in this company
+      include: [{
+        model: Role,
+        as: 'role',
+        attributes: ['name'],
+      }],
+      where: {
+        companyId: filters.companyId,
+        isActive: true,
+        revokedAt: null,
+      },
     };
+
+    // Apply role filter if specified
+    if (filters.roleName) {
+      userRoleInclude.include[0].where = { name: filters.roleName };
+      userRoleInclude.include[0].required = true;
+    }
 
     if (filters.search) {
       (whereClause as any)[Op.or] = [
@@ -157,15 +180,13 @@ export class CompanyService {
       ];
     }
 
-    if (filters.role) {
-      whereClause['role'] = filters.role;
-    }
-
     const { rows: users, count: total } = await User.findAndCountAll({
       where: whereClause,
+      include: [userRoleInclude],
       limit: filters.limit || 10,
       offset,
       order: [['createdAt', 'DESC']],
+      distinct: true, // Important for accurate count with joins
     });
 
     return {

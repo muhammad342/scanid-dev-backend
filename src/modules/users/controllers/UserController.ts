@@ -110,10 +110,14 @@ export class UserController {
     //   .optional()
     //   .isMobilePhone('any')
     //   .withMessage('Please provide a valid phone number'),
-    body('role')
+    body('roles')
       .optional()
-      .isIn(['super_admin', 'edition_admin', 'company_admin', 'user', 'delegate'])
-      .withMessage('Invalid role. Must be one of: super_admin, edition_admin, company_admin, user, delegate'),
+      .isArray()
+      .withMessage('Roles must be an array of role objects'),
+    body('roles.*.roleName')
+      .optional()
+      .isIn(['super_admin', 'edition_admin', 'company_admin', 'channel_admin', 'user', 'delegate'])
+      .withMessage('Invalid role name. Must be one of: super_admin, edition_admin, company_admin, channel_admin, user, delegate'),
     body('isActive')
       .optional()
       .isBoolean()
@@ -174,8 +178,9 @@ export class UserController {
       sendBadRequest(res, 'User not authenticated');
       return;
     }
+    const userContext = req.user?.getPlainData();
 
-    const user = await userService.getUserById(req.user.id);
+    const user = await userService.getUserById(userContext.id);
     
     if (!user) {
       sendNotFound(res, 'User not found');
@@ -194,29 +199,35 @@ export class UserController {
     }
 
     // Role-based validation for user creation
-    const requestedRole = req.body.role || 'user';
-    const currentUserRole = context.role;
+    const requestedRoles = req.body.roles || [{ roleName: 'user' }];
+    const currentUserRole = context.roleName;
 
-    // Validate role hierarchy
-    if (currentUserRole === 'company_admin' && (requestedRole === 'super_admin' || requestedRole === 'edition_admin')) {
-      return sendForbidden(res, 'Company admins can not create super admins and edition admins');
-    }
+    // Validate role hierarchy for each requested role
+    for (const roleData of requestedRoles) {
+      const requestedRole = roleData.roleName;
+      
+      if (currentUserRole === 'company_admin' && (requestedRole === 'super_admin' || requestedRole === 'edition_admin')) {
+        return sendForbidden(res, 'Company admins can not create super admins and edition admins');
+      }
 
-    if (currentUserRole === 'edition_admin' && requestedRole === 'super_admin') {
-      return sendForbidden(res, 'Edition admins cannot create super admins');
+      if (currentUserRole === 'edition_admin' && requestedRole === 'super_admin') {
+        return sendForbidden(res, 'Edition admins cannot create super admins');
+      }
     }
 
     // Prepare user data with context
     const userData: CreateUserData = {
       ...req.body,
-      systemEditionId: context.systemEditionId,
-      companyId: context.companyId,
       createdBy: context.userId,
-      role: requestedRole,
+      roles: requestedRoles.map((role: any) => ({
+        ...role,
+        systemEditionId: role.systemEditionId || context.systemEditionId,
+        companyId: role.companyId || context.companyId,
+      })),
     };
 
     // Set defaults based on role
-    if (requestedRole === 'user' || requestedRole === 'delegate') {
+    if (requestedRoles.length === 1 && requestedRoles[0].roleName === 'user') {
       userData.isActive = userData.isActive !== undefined ? userData.isActive : true;
       userData.emailVerified = userData.emailVerified !== undefined ? userData.emailVerified : false;
       userData.seatAssigned = userData.seatAssigned !== undefined ? userData.seatAssigned : false;
@@ -235,13 +246,37 @@ export class UserController {
     }
   });
 
+  // Create user with userRoles (super admin only)
+  static createUserWithUserRoles = asyncHandler(async (req: RequestWithContext, res: Response) => {
+    const context = req.resolvedContext;
+    
+    if (!context) {
+      return sendBadRequest(res, 'Context resolution failed');
+    }
+
+    const userData = req.body;
+    const { userRoles, ...userCreateData } = userData;
+
+    try {
+      const newUser = await userService.createUserWithUserRoles(userCreateData, userRoles, context);
+      sendCreated(res, newUser, 'User created successfully with userRoles');
+    } catch (error) {
+      if (error instanceof Error) {
+        sendBadRequest(res, error.message);
+      } else {
+        throw error;
+      }
+    }
+  });
+
   // Get all users (admin only) - context-aware
   static getAllUsers = asyncHandler(async (req: RequestWithContext, res: Response) => {
     const context = req?.resolvedContext;
     const page = parseInt(req.query['page'] as string) || 1;
     const limit = parseInt(req.query['limit'] as string) || 10;
     const search = req.query['search'] as string;
-    const role = req.query['role'] as string;
+    const roleName = req.query['roleName'] as string;
+    const roleId = req.query['roleId'] as string;
     const isActive = req.query['isActive'] === 'true' ? true : req.query['isActive'] === 'false' ? false : undefined;
     const emailVerified = req.query['emailVerified'] === 'true' ? true : req.query['emailVerified'] === 'false' ? false : undefined;
 
@@ -253,9 +288,10 @@ export class UserController {
     try {
       const filters = {
         ...(search && { search }),
-        ...(role && { role }),
+        ...(roleName && { roleName }),
         ...(isActive !== undefined && { isActive }),
         ...(emailVerified !== undefined && { emailVerified }),
+        ...(roleId && { roleId }),
       };
 
       const result = await userService.getAllUsers(page, limit, filters, context);
@@ -445,7 +481,7 @@ export class UserController {
     }
 
     // Check if the current user has permission to delete users
-    const currentUserRole = context.role;
+    const currentUserRole = context.roleName;
     
     if (currentUserRole === 'user' || currentUserRole === 'delegate') {
       return sendForbidden(res, 'Users and delegates cannot delete other users');
@@ -463,20 +499,20 @@ export class UserController {
       // Role-based permission checks
       if (currentUserRole === 'company_admin') {
         // Company admins can only delete users from their own company
-        if (targetUser.companyId !== context.companyId) {
+        if (targetUser.activeRole?.companyId !== context.companyId) {
           return sendForbidden(res, 'Company admins can only delete users from their own company');
         }
         // Company admins cannot delete other company admins or higher roles
-        if (['edition_admin', 'super_admin'].includes(targetUser.role)) {
+        if (targetUser.activeRole?.roleName && ['edition_admin', 'super_admin'].includes(targetUser.activeRole.roleName)) {
           return sendForbidden(res, 'Company admins cannot delete users with edition_admin or super_admin role');
         }
       } else if (currentUserRole === 'edition_admin') {
         // Edition admins can only delete users from their system edition
-        if (targetUser.systemEditionId !== context.systemEditionId) {
+        if (targetUser.activeRole?.systemEditionId !== context.systemEditionId) {
           return sendForbidden(res, 'Edition admins can only delete users from their system edition');
         }
         // Edition admins cannot delete other edition admins or super admins
-        if (['edition_admin', 'super_admin'].includes(targetUser.role)) {
+        if (targetUser.activeRole?.roleName && ['edition_admin', 'super_admin'].includes(targetUser.activeRole.roleName)) {
           return sendForbidden(res, 'Edition admins cannot delete users with edition_admin role or higher');
         }
       }
@@ -505,13 +541,7 @@ export class UserController {
       sendBadRequest(res, 'User not authenticated');
       return;
     }
-
-      // Allow nested emulation - users can emulate while already emulating
-  // The backend will handle the emulation chain properly
-  // if (req.user.isEmulating) {
-  //   sendBadRequest(res, 'Already in emulation mode. End current emulation first.');
-  //   return;
-  // }
+    const user = req.user.getPlainData();
 
     const { id: targetUserId } = req.params;
     
@@ -521,7 +551,7 @@ export class UserController {
     }
 
     try {
-      const result = await userService.startEmulation(req.user.id, targetUserId, req.user);
+      const result = await userService.startEmulation(user.id, targetUserId, req.user);
       sendSuccess(res, result, 'Emulation started successfully');
     } catch (error) {
       if (error instanceof Error) {
@@ -555,6 +585,8 @@ export class UserController {
       }
     }
   });
+
+
 }
 
 export default UserController; 

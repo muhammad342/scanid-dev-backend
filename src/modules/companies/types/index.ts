@@ -59,5 +59,5 @@ export interface PinConfiguration {
 
 export interface CompanyUserFilters extends PaginationFilters {
   companyId: string;
-  role?: "company_admin" | "user" | "delegate" | undefined;
+  roleName?: string | undefined; // Can be any role name from roles table
 }

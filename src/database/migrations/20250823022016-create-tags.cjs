@@ -1,19 +1,13 @@
 'use strict';
 
+/** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  up: async (queryInterface, Sequelize) => {
+  up: async function (queryInterface, Sequelize) {
     await queryInterface.createTable('tags', {
       id: {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
-      },
-      name: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      type: {
-        type: Sequelize.ENUM('document', 'note'),
         allowNull: false,
       },
       system_edition_id: {
@@ -23,6 +17,30 @@ module.exports = {
           model: 'system_editions',
           key: 'id',
         },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      },
+      name: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      color: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      type: {
+        type: Sequelize.ENUM('document', 'note', 'certificate'),
+        allowNull: false,
+      },
+      is_active: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+      },
+      sort_order: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
       },
       created_at: {
         type: Sequelize.DATE,
@@ -43,15 +61,12 @@ module.exports = {
     // Add indexes
     await queryInterface.addIndex('tags', ['system_edition_id']);
     await queryInterface.addIndex('tags', ['type']);
-    await queryInterface.addIndex('tags', ['name', 'system_edition_id', 'type'], {
-      unique: true,
-      where: {
-        deleted_at: null,
-      },
-    });
+    await queryInterface.addIndex('tags', ['system_edition_id', 'type']);
+    await queryInterface.addIndex('tags', ['is_active']);
+    await queryInterface.addIndex('tags', ['sort_order']);
   },
 
-  down: async (queryInterface, Sequelize) => {
+  down: async function (queryInterface, Sequelize) {
     await queryInterface.dropTable('tags');
   }
-}; 
+};

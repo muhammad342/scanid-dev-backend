@@ -1,0 +1,729 @@
+{
+  "info": {
+    "name": "Roles",
+    "description": "API endpoints for managing roles with comprehensive CRUD operations",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Roles",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/roles?page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "roles"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Page number (default: 1)"
+            },
+            {
+              "key": "limit",
+              "value": "10",
+              "description": "Items per page (default: 10)"
+            },
+            {
+              "key": "search",
+              "value": "",
+              "description": "Search term for role name",
+              "disabled": true
+            },
+            {
+              "key": "name",
+              "value": "",
+              "description": "Filter by exact role name",
+              "disabled": true
+            },
+            {
+              "key": "accessScope",
+              "value": "",
+              "description": "Filter by access scope (GLOBAL, EDITION, COMPANY, SELF)",
+              "disabled": true
+            },
+            {
+              "key": "isActive",
+              "value": "",
+              "description": "Filter by active status (true/false)",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Get all roles with filtering and pagination. Access is available to all authenticated users.\n\nQuery Parameters:\n- page: Page number for pagination\n- limit: Number of items per page\n- search: Search term for role name (case-insensitive)\n- name: Exact role name filter\n- accessScope: Filter by access scope\n- isActive: Filter by active status"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles?page=1&limit=10"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Roles retrieved successfully",
+            "data": [
+              {
+                "id": "uuid",
+                "name": "super_admin",
+                "description": "Full system access with all permissions",
+                "accessScope": "GLOBAL",
+                "isActive": true,
+                "createdAt": "2024-01-01T00:00:00.000Z",
+                "updatedAt": "2024-01-01T00:00:00.000Z"
+              },
+              {
+                "id": "uuid",
+                "name": "edition_admin",
+                "description": "Edition-level management access",
+                "accessScope": "EDITION",
+                "isActive": true,
+                "createdAt": "2024-01-01T00:00:00.000Z",
+                "updatedAt": "2024-01-01T00:00:00.000Z"
+              }
+            ],
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 6,
+              "totalPages": 1,
+              "hasNextPage": false,
+              "hasPrevPage": false
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Role by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/roles/{{roleId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "roles", "{{roleId}}"]
+        },
+        "description": "Get a specific role by its ID. Access is available to all authenticated users."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles/{{roleId}}"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Role retrieved successfully",
+            "data": {
+              "id": "uuid",
+              "name": "company_admin",
+              "description": "Company-level management access",
+              "accessScope": "COMPANY",
+              "isActive": true,
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Not Found Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles/invalid-uuid"
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Resource not found",
+            "error": "Not Found",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Role",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"project_manager\",\n  \"description\": \"Project management role with limited access\",\n  \"accessScope\": \"COMPANY\",\n  \"isActive\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/roles",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "roles"]
+        },
+        "description": "Create a new role. Access is restricted to Super Admin and Edition Admin only.\n\nRequired Fields:\n- name: Role name (lowercase letters and underscores only)\n- accessScope: Access scope (GLOBAL, EDITION, COMPANY, SELF)\n\nOptional Fields:\n- description: Role description\n- isActive: Active status (default: true)\n\nValidation Rules:\n- Role name must be 1-50 characters\n- Role name must contain only lowercase letters and underscores\n- Description must not exceed 1000 characters\n- Access scope must be one of the predefined values"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles"
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Role created successfully",
+            "data": {
+              "id": "uuid",
+              "name": "project_manager",
+              "description": "Project management role with limited access",
+              "accessScope": "COMPANY",
+              "isActive": true,
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Validation Error Response",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles"
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Validation failed",
+            "error": "Role name must contain only lowercase letters and underscores",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Duplicate Role Error Response",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles"
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Role with name 'project_manager' already exists",
+            "error": "Bad Request",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Role",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"description\": \"Updated project management role description\",\n  \"isActive\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/roles/{{roleId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "roles", "{{roleId}}"]
+        },
+        "description": "Update an existing role. Access is restricted to Super Admin and Edition Admin only.\n\nUpdateable Fields:\n- name: Role name (cannot rename predefined roles)\n- description: Role description\n- accessScope: Access scope\n- isActive: Active status\n\nRestrictions:\n- Cannot rename predefined roles (super_admin, edition_admin, company_admin, channel_admin, user, delegate)\n- Cannot change access scope of predefined roles"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles/{{roleId}}"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Role updated successfully",
+            "data": {
+              "id": "uuid",
+              "name": "project_manager",
+              "description": "Updated project management role description",
+              "accessScope": "COMPANY",
+              "isActive": false,
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Predefined Role Update Error Response",
+          "originalRequest": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles/{{roleId}}"
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Cannot rename predefined role 'super_admin'",
+            "error": "Bad Request",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Role",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/roles/{{roleId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "roles", "{{roleId}}"]
+        },
+        "description": "Delete a role. Access is restricted to Super Admin and Edition Admin only.\n\nRestrictions:\n- Cannot delete predefined roles (super_admin, edition_admin, company_admin, channel_admin, user, delegate)\n- Cannot delete roles that are assigned to users\n\nNote: This is a permanent deletion. Use with caution."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles/{{roleId}}"
+            }
+          },
+          "status": "No Content",
+          "code": 204,
+          "_postman_previewlanguage": "json",
+          "header": []
+        },
+        {
+          "name": "Predefined Role Delete Error Response",
+          "originalRequest": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles/{{roleId}}"
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Cannot delete predefined role 'super_admin'",
+            "error": "Bad Request",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Role In Use Error Response",
+          "originalRequest": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles/{{roleId}}"
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Cannot delete role 'project_manager' as it is assigned to 5 user(s)",
+            "error": "Bad Request",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Role Statistics",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/roles/stats",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "roles", "stats"]
+        },
+        "description": "Get comprehensive statistics about roles in the system. Access is available to all authenticated users.\n\nReturns:\n- Total number of roles\n- Number of active/inactive roles\n- Breakdown by access scope"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles/stats"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Role statistics retrieved successfully",
+            "data": {
+              "total": 8,
+              "active": 7,
+              "inactive": 1,
+              "byScope": [
+                {
+                  "accessScope": "GLOBAL",
+                  "count": "1"
+                },
+                {
+                  "accessScope": "EDITION",
+                  "count": "2"
+                },
+                {
+                  "accessScope": "COMPANY",
+                  "count": "3"
+                },
+                {
+                  "accessScope": "SELF",
+                  "count": "2"
+                }
+              ]
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Roles by Access Scope",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/roles/scope/COMPANY",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "roles", "scope", "COMPANY"]
+        },
+        "description": "Get all active roles for a specific access scope. Access is available to all authenticated users.\n\nValid Access Scopes:\n- GLOBAL: System-wide access (super_admin)\n- EDITION: Edition-level access (edition_admin)\n- COMPANY: Company-level access (company_admin, channel_admin)\n- SELF: User-level access (user, delegate)"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles/scope/COMPANY"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Roles with COMPANY access scope retrieved successfully",
+            "data": [
+              {
+                "id": "uuid",
+                "name": "company_admin",
+                "description": "Company-level management access",
+                "accessScope": "COMPANY",
+                "isActive": true,
+                "createdAt": "2024-01-01T00:00:00.000Z",
+                "updatedAt": "2024-01-01T00:00:00.000Z"
+              },
+              {
+                "id": "uuid",
+                "name": "channel_admin",
+                "description": "Channel-level management access",
+                "accessScope": "COMPANY",
+                "isActive": true,
+                "createdAt": "2024-01-01T00:00:00.000Z",
+                "updatedAt": "2024-01-01T00:00:00.000Z"
+              },
+              {
+                "id": "uuid",
+                "name": "project_manager",
+                "description": "Project management role with limited access",
+                "accessScope": "COMPANY",
+                "isActive": true,
+                "createdAt": "2024-01-01T00:00:00.000Z",
+                "updatedAt": "2024-01-01T00:00:00.000Z"
+              }
+            ],
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Invalid Scope Error Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles/scope/INVALID"
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Invalid access scope. Must be one of: GLOBAL, EDITION, COMPANY, SELF",
+            "error": "Bad Request",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Check Role Name Exists",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/roles/check-name/project_manager",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "roles", "check-name", "project_manager"]
+        },
+        "description": "Check if a role name already exists in the system. Useful for validation before creating new roles. Access is available to all authenticated users."
+      },
+      "response": [
+        {
+          "name": "Role Exists Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles/check-name/project_manager"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Role name check completed",
+            "data": {
+              "exists": true,
+              "name": "project_manager"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Role Does Not Exist Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/roles/check-name/new_role_name"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Role name check completed",
+            "data": {
+              "exists": false,
+              "name": "new_role_name"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "Base URL for the API"
+    },
+    {
+      "key": "token",
+      "value": "your-jwt-token-here",
+      "type": "string",
+      "description": "JWT authentication token"
+    },
+    {
+      "key": "roleId",
+      "value": "uuid-of-role-to-test",
+      "type": "string",
+      "description": "UUID of a role to use for testing update/delete operations"
+    }
+  ]
+}

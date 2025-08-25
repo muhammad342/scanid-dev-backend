@@ -4,10 +4,13 @@ import { Router } from 'express';
 import systemEditionRoutes from '../../modules/systemEditions/routes/systemEditionRoutes.js';
 import companyRoutes from '../../modules/companies/routes/companyRoutes.js';
 import userRoutes from '../../modules/users/routes/userRoutes.js';
+import userRoleRoutes from '../../modules/userRoles/routes/userRoleRoutes.js';
 import delegateAccessRoutes from '../../modules/delegates/routes/delegateAccessRoutes.js';
 import customFieldRoutes from '../../modules/customFields/routes/customFieldRoutes.js';
 import auditLogRoutes from '../../modules/auditLogs/routes/auditLogRoutes.js';
 import tagRoutes from '../../modules/tags/routes/tagRoutes.js';
+import roleRoutes from '../../modules/roles/routes/roleRoutes.js';
+import superAdminRoutes from '../../modules/superAdmin/routes/superAdminRoutes.js';
 
 const router = Router();
 
@@ -25,9 +28,12 @@ router.get('/health', (_req, res) => {
 router.use('/system-editions', systemEditionRoutes);
 router.use('/companies', companyRoutes);
 router.use('/users', userRoutes);
+router.use('/user-roles', userRoleRoutes);
 router.use('/delegate-access', delegateAccessRoutes);
 router.use('/custom-fields', customFieldRoutes);
 router.use('/audit-logs', auditLogRoutes);
 router.use('/tags', tagRoutes);
+router.use('/roles', roleRoutes);
+router.use('/super-admin', superAdminRoutes);
 
 export default router; 

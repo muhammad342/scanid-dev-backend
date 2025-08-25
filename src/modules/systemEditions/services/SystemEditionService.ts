@@ -1,11 +1,12 @@
 import { Op, WhereOptions } from 'sequelize';
-import { SystemEdition, Company, User, SeatManagement, DelegateAccess, AuditLog } from '../../../models/index.js';
+import { SystemEdition, Company, User, SeatManagement, DelegateAccess, AuditLog, Role, UserRole } from '../../../models/index.js';
+import { config } from '../../../config/index.js';
 import { logger } from '../../../shared/utils/logger.js';
 import { MulterFile } from '../../../shared/types/common.js';
 import { s3Service } from '../../../shared/utils/s3.js';
 import bcrypt from 'bcryptjs';
-import { config } from '../../../config/index.js';
-import { notificationService } from '../../notifications/services/NotificationService.js';
+import { UserAttributes } from '../../../models/User/index.js';
+import { UserRoleAttributes } from '../../../models/UserRole/index.js';
 
 export interface SystemEditionFilters {
   page: number;
@@ -18,7 +19,7 @@ export interface PaginationFilters {
   page: number;
   limit: number;
   search?: string;
-  role?: string;
+  roleName?: string;
 }
 
 export class SystemEditionService {
@@ -42,13 +43,13 @@ export class SystemEditionService {
       limit: filters.limit,
       offset,
       order: [['createdAt', 'DESC']],
-             include: [
-         {
-           model: User,
-           as: 'createdByUser',
-           attributes: ['id', 'firstName', 'lastName', 'email'],
-         },
-       ],
+      include: [
+        {
+          model: User,
+          as: 'createdByUser',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+      ],
     });
 
     return {
@@ -61,26 +62,20 @@ export class SystemEditionService {
   // Get system edition by ID
   async getSystemEditionById(id: string) {
     const systemEdition = await SystemEdition.findByPk(id, {
-             include: [
-         {
-           model: User,
-           as: 'createdByUser',
-           attributes: ['id', 'firstName', 'lastName', 'email'],
-         },
-         {
-           model: SeatManagement,
-           as: 'seatManagement',
-         },
+      include: [
+        {
+          model: User,
+          as: 'createdByUser',
+          attributes: ['id', 'firstName', 'lastName', 'email'],
+        },
+        {
+          model: SeatManagement,
+          as: 'seatManagement',
+        },
         {
           model: Company,
           as: 'companies',
-          include: [
-            {
-              model: User,
-              as: 'companyAdmin',
-              attributes: ['id', 'firstName', 'lastName', 'email'],
-            },
-          ],
+          attributes: ['id', 'name', 'status', 'type', 'totalSeats', 'usedSeats', 'createdAt'],
         },
       ],
     });
@@ -156,24 +151,51 @@ export class SystemEditionService {
 
   // Get system edition overview
   async getSystemEditionOverview(id: string) {
-    const systemEditionData = await SystemEdition.findByPk(id);
+    const systemEditionData = await SystemEdition.findByPk(id, {
+      include: [
+        {
+          model: Company,
+          as: 'companies',
+          attributes: ['id'],
+        },
+      ],
+    });
 
     if (!systemEditionData) {
-      return null;
+      throw new Error('System edition not found');
     }
 
     const systemEdition = systemEditionData?.get({ plain: true });
 
-    const [companiesCount, usersCount, editionAdminsCount, createdByUser] = await Promise.all([
-      Company.count({ where: { systemEditionId: id } }),
-      User.count({ where: { systemEditionId: id } }),
-      User.count({ where: { systemEditionId: id, role: 'edition_admin' } }),
-      User.findByPk(systemEdition.createdBy, {
-        attributes: ['firstName', 'lastName', 'email']
-      }),
-    ]);
+    // Count users with roles in this system edition
+    const usersWithRoles = await UserRole.count({
+      where: { 
+        systemEditionId: id,
+        isActive: true,
+        revokedAt: null as any,
+      },
+    });
 
-    const createdByUserData = createdByUser?.get({ plain: true });
+    // Count edition admins
+    const editionAdminsCount = await UserRole.count({
+      where: { 
+        systemEditionId: id,
+        isActive: true,
+        revokedAt: null as any,
+      },
+      include: [{
+        model: Role,
+        as: 'role',
+        where: { name: 'edition_admin' },
+      }],
+    });
+
+    const companiesCount = (systemEdition as any).companies?.length || 0;
+    const createdByUser = await User.findByPk(systemEdition.createdBy, {
+      attributes: ['firstName', 'lastName', 'email']
+    });
+
+    const createdByUserData = createdByUser?.getPlainData();
     const featuresEnabled = Object.keys(systemEdition.modules || {}).filter(
       (key) => (systemEdition.modules as any)?.[key] === true
     );
@@ -189,7 +211,7 @@ export class SystemEditionService {
       editionName: systemEdition.name,
       editionAdmins: editionAdminsCount.toString(),
       companies: companiesCount.toString(),
-      activeUsers: usersCount.toString(),
+      activeUsers: usersWithRoles.toString(),
       featuresEnabled: featuresEnabledText,
     };
   }
@@ -212,11 +234,6 @@ export class SystemEditionService {
       order: [['createdAt', 'DESC']],
       include: [
         {
-          model: User,
-          as: 'companyAdmin',
-          attributes: ['id', 'firstName', 'lastName', 'email'],
-        },
-        {
           model: SystemEdition,
           as: 'systemEdition',
           attributes: ['name'],
@@ -224,8 +241,41 @@ export class SystemEditionService {
       ],
     });
 
+    // Enrich companies with company admin information using role-based approach
+    const enrichedCompanies = await Promise.all(
+      companies.map(async (company) => {
+        const companyData = company.get({ plain: true }) as any;
+        
+        // Find company admin through UserRole
+        const companyAdminRole = await UserRole.findOne({
+          where: {
+            companyId: companyData.id,
+            isActive: true,
+            revokedAt: null as any,
+          },
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'firstName', 'lastName', 'email'],
+            },
+            {
+              model: Role,
+              as: 'role',
+              where: { name: 'company_admin' },
+            },
+          ],
+        });
+
+        return {
+          ...companyData,
+          companyAdmin: companyAdminRole?.user || null,
+        };
+      })
+    );
+
     return {
-      companies,
+      companies: enrichedCompanies,
       total,
       totalPages: Math.ceil(total / filters.limit),
     };
@@ -234,43 +284,89 @@ export class SystemEditionService {
   // Get system edition users
   async getSystemEditionUsers(id: string, filters: PaginationFilters) {
     const offset = (filters.page - 1) * filters.limit;
-    const whereClause: WhereOptions = { systemEditionId: id };
-
+    
     console.log('Service - Filters received:', filters);
-    console.log('Service - Initial whereClause:', whereClause);
+    console.log('Service - Initial whereClause for users');
 
-    if (filters.role) {
-      whereClause['role'] = filters.role;
-      console.log('Service - Added role filter:', filters.role);
+    // Build the base query for users with roles in this system edition
+    // First, get user IDs that have roles in this system edition
+    const userRoleSubquery = await UserRole.findAll({
+      where: {
+        systemEditionId: id,
+        isActive: true,
+        revokedAt: null as any,
+      },
+      attributes: ['userId'],
+      raw: true,
+    });
+
+    const userIds = userRoleSubquery.map(ur => ur.userId);
+
+    if (userIds.length === 0) {
+      return {
+        users: [],
+        total: 0,
+        totalPages: 0,
+      };
     }
 
-    if (filters.search) {
-      (whereClause as any)[Op.or] = [
-        { firstName: { [Op.iLike]: `%${filters.search}%` } },
-        { lastName: { [Op.iLike]: `%${filters.search}%` } },
-        { email: { [Op.iLike]: `%${filters.search}%` } },
-      ];
-    }
-
-    console.log('Service - Final whereClause:', whereClause);
-
-    const { rows: users, count: total } = await User.findAndCountAll({
-      where: whereClause,
+    // Build the main query for users - simplified to avoid association issues
+    const baseQuery: any = {
+      where: {
+        id: { [Op.in]: userIds },
+      },
       limit: filters.limit,
       offset,
       order: [['createdAt', 'DESC']],
-      include: [
-        {
-          model: Company,
-          as: 'company',
-          attributes: ['id', 'name'],
+      attributes: ['id', 'firstName', 'lastName', 'email', 'isActive', 'emailVerified', 'lastLoginAt', 'expirationDate', 'createdAt', 'updatedAt'],
+    };
+
+    // Add role filter if specified
+    if (filters.roleName) {
+      // Filter by role using a subquery approach
+      const roleFilteredUserIds = await UserRole.findAll({
+        where: {
+          systemEditionId: id,
+          isActive: true,
+          revokedAt: null as any,
         },
-      ],
-    });
+        include: [{
+          model: Role,
+          as: 'role',
+          where: { name: filters.roleName },
+        }],
+        attributes: ['userId'],
+        raw: true,
+      });
+      
+      const roleFilteredIds = roleFilteredUserIds.map(ur => ur.userId);
+      baseQuery.where.id = { [Op.in]: roleFilteredIds };
+      console.log('Service - Added role filter:', filters.roleName);
+    }
+
+    // Add search filter if specified
+    if (filters.search) {
+      baseQuery.where = {
+        [Op.and]: [
+          { id: { [Op.in]: userIds } },
+          {
+            [Op.or]: [
+              { firstName: { [Op.iLike]: `%${filters.search}%` } },
+              { lastName: { [Op.iLike]: `%${filters.search}%` } },
+              { email: { [Op.iLike]: `%${filters.search}%` } },
+            ],
+          },
+        ],
+      };
+    }
+
+    console.log('Service - Final query:', JSON.stringify(baseQuery, null, 2));
+
+    const { rows: users, count: total } = await User.findAndCountAll(baseQuery);
 
     console.log('Service - Query result count:', users.length);
-    console.log('Service - User roles found:', users.map(u => u.role));
 
+    // Return raw users for now - the controller will handle formatting
     return {
       users,
       total,
@@ -281,32 +377,61 @@ export class SystemEditionService {
   // Get system edition company admins
   async getSystemEditionCompanyAdmins(id: string, filters: PaginationFilters) {
     const offset = (filters.page - 1) * filters.limit;
-    const whereClause: WhereOptions = { 
-      systemEditionId: id,
-      role: 'company_admin',
-    };
+    
+    // First, get user IDs that have company_admin role in this system edition
+    const userRoleSubquery = await UserRole.findAll({
+      where: {
+        systemEditionId: id,
+        isActive: true,
+        revokedAt: null as any,
+      },
+      include: [{
+        model: Role,
+        as: 'role',
+        where: { name: 'company_admin' },
+      }],
+      attributes: ['userId'],
+      raw: true,
+    });
 
-    if (filters.search) {
-      (whereClause as any)[Op.or] = [
-        { firstName: { [Op.iLike]: `%${filters.search}%` } },
-        { lastName: { [Op.iLike]: `%${filters.search}%` } },
-        { email: { [Op.iLike]: `%${filters.search}%` } },
-      ];
+    const userIds = userRoleSubquery.map(ur => ur.userId);
+
+    if (userIds.length === 0) {
+      return {
+        admins: [],
+        total: 0,
+        totalPages: 0,
+      };
     }
 
-    const { rows: admins, count: total } = await User.findAndCountAll({
-      where: whereClause,
+    // Build the main query for company admins - simplified to avoid association issues
+    const baseQuery: any = {
+      where: {
+        id: { [Op.in]: userIds },
+      },
       limit: filters.limit,
       offset,
       order: [['createdAt', 'DESC']],
-      include: [
-        {
-          model: Company,
-          as: 'company',
-          attributes: ['id', 'name'],
-        },
-      ],
-    });
+      attributes: ['id', 'firstName', 'lastName', 'email', 'isActive', 'emailVerified', 'lastLoginAt', 'expirationDate', 'createdAt', 'updatedAt'],
+    };
+
+    // Add search filter if specified
+    if (filters.search) {
+      baseQuery.where = {
+        [Op.and]: [
+          { id: { [Op.in]: userIds } },
+          {
+            [Op.or]: [
+              { firstName: { [Op.iLike]: `%${filters.search}%` } },
+              { lastName: { [Op.iLike]: `%${filters.search}%` } },
+              { email: { [Op.iLike]: `%${filters.search}%` } },
+            ],
+          },
+        ],
+      };
+    }
+
+    const { rows: admins, count: total } = await User.findAndCountAll(baseQuery);
 
     return {
       admins,
@@ -451,6 +576,7 @@ export class SystemEditionService {
       secondaryBrandColor: updatedSystemEditionData.secondaryBrandColor || '',
     };
   }
+
   // Get system edition delegate access
   async getSystemEditionDelegateAccess(id: string, filters: PaginationFilters) {
     const offset = (filters.page - 1) * filters.limit;
@@ -572,36 +698,65 @@ export class SystemEditionService {
   // Get system edition edition admins
   async getSystemEditionEditionAdmins(id: string, filters: PaginationFilters) {
     const offset = (filters.page - 1) * filters.limit;
-    const whereClause: WhereOptions = { 
-      systemEditionId: id,
-      role: 'edition_admin',
-    };
+    
+    // First, get user IDs that have edition_admin role in this system edition
+    const userRoleSubquery = await UserRole.findAll({
+      where: {
+        systemEditionId: id,
+        isActive: true,
+        revokedAt: null as any,
+      },
+      include: [{
+        model: Role,
+        as: 'role',
+        where: { name: 'edition_admin' },
+      }],
+      attributes: ['userId'],
+      raw: true,
+    });
 
-    if (filters.search) {
-      (whereClause as any)[Op.or] = [
-        { firstName: { [Op.iLike]: `%${filters.search}%` } },
-        { lastName: { [Op.iLike]: `%${filters.search}%` } },
-        { email: { [Op.iLike]: `%${filters.search}%` } },
-      ];
+    const userIds = userRoleSubquery.map(ur => ur.userId);
+
+    if (userIds.length === 0) {
+      return {
+        editionAdmins: [],
+        total: 0,
+        totalPages: 0,
+      };
     }
 
-    const { rows: editionAdmins, count: total } = await User.findAndCountAll({
-      where: whereClause,
+    // Build the main query for edition admins - simplified to avoid association issues
+    const baseQuery: any = {
+      where: {
+        id: { [Op.in]: userIds },
+      },
       limit: filters.limit,
       offset,
       order: [['createdAt', 'DESC']],
-      include: [
-        {
-          model: Company,
-          as: 'company',
-          attributes: ['id', 'name'],
-        },
-      ],
-    });
+      attributes: ['id', 'firstName', 'lastName', 'email', 'isActive', 'emailVerified', 'lastLoginAt', 'expirationDate', 'createdAt', 'updatedAt'],
+    };
+
+    // Add search filter if specified
+    if (filters.search) {
+      baseQuery.where = {
+        [Op.and]: [
+          { id: { [Op.in]: userIds } },
+          {
+            [Op.or]: [
+              { firstName: { [Op.iLike]: `%${filters.search}%` } },
+              { lastName: { [Op.iLike]: `%${filters.search}%` } },
+              { email: { [Op.iLike]: `%${filters.search}%` } },
+            ],
+          },
+        ],
+      };
+    }
+
+    const { rows: editionAdmins, count: total } = await User.findAndCountAll(baseQuery);
 
     // Add computed fields for frontend compatibility
     const enrichedEditionAdmins = editionAdmins.map(admin => ({
-      ...admin.toJSON(),
+      ...admin.getPlainData(),
       expiration: !!admin.expirationDate, // Boolean flag for frontend
     }));
 
@@ -614,124 +769,150 @@ export class SystemEditionService {
 
   // Get single system edition edition admin
   async getSystemEditionEditionAdmin(systemEditionId: string, adminId: string) {
-    const editionAdmin = await User.findOne({
+    // First verify the user has the edition_admin role for this system edition
+    const userRole = await UserRole.findOne({
       where: {
-        id: adminId,
-        systemEditionId: systemEditionId,
-        role: 'edition_admin',
+        userId: adminId,
+        systemEditionId,
+        isActive: true,
+        revokedAt: null as any,
       },
-      include: [
-        {
-          model: Company,
-          as: 'company',
-          attributes: ['id', 'name'],
-        },
-      ],
+      include: [{
+        model: Role,
+        as: 'role',
+        where: { name: 'edition_admin' },
+      }],
+    });
+
+    if (!userRole) {
+      throw new Error('Edition admin not found');
+    }
+
+    // Now fetch the user details
+    const editionAdmin = await User.findByPk(adminId, {
+      attributes: ['id', 'firstName', 'lastName', 'email', 'isActive', 'emailVerified', 'lastLoginAt', 'expirationDate', 'createdAt', 'updatedAt'],
     });
 
     if (!editionAdmin) {
-      throw new Error('Edition admin not found');
+      throw new Error('User not found');
     }
 
     // Add computed fields for frontend compatibility
     return {
-      ...editionAdmin.toJSON(),
+      ...editionAdmin.getPlainData(),
       expiration: !!editionAdmin.expirationDate, // Boolean flag for frontend
     };
   }
 
   // Create system edition edition admin
-  async createSystemEditionEditionAdmin(id: string, adminData: {
+  async createSystemEditionEditionAdmin(systemEditionId: string, adminData: {
     firstName: string;
     lastName: string;
     email: string;
     expirationDate?: Date;
     createdBy: string;
-  }) {
-    // Check if user already exists
-    const existingUser = await User.findOne({ where: { email: adminData.email } });
-    
-    if (existingUser) {
-      throw new Error('User already exists with this email');
+  }): Promise<{
+    user: UserAttributes;
+    userRole: UserRoleAttributes;
+  }> {
+    console.log('adminData', adminData);
+    const { firstName, lastName, email, expirationDate, createdBy } = adminData;
+
+    // Check if user already exists (including soft-deleted users)
+    let user = await User.findOne({ 
+      where: { email },
+      paranoid: false // Include soft-deleted users
+    });
+
+    if (!user) {
+      console.log('user not found');
+      // Create new user
+      const hashedPassword = await bcrypt.hash('temp_password_123', config.app.bcryptSaltRounds);
+      
+      user = await User.create({
+        firstName,
+        lastName,
+        email,
+        password: hashedPassword,
+        isActive: true,
+        emailVerified: false,
+        seatAssigned: false,
+        licenseType: 'none',
+        delegateCount: 0,
+        createdBy,
+      });
+    } else if (user.deletedAt) {
+      console.log('user found but soft-deleted, restoring and updating...');
+      // User exists but is soft-deleted, restore and update
+      await user.restore();
+      await user.update({
+        firstName,
+        lastName,
+        isActive: true,
+        emailVerified: false,
+        seatAssigned: false,
+        licenseType: 'none',
+        delegateCount: 0,
+        createdBy,
+      });
     }
 
-    // Get the system edition name
-    const systemEdition = await SystemEdition.findByPk(id);
-    if (!systemEdition) {
-      throw new Error('System edition not found');
+    const userData = user.getPlainData();
+
+    // Check if user already has edition_admin role for this system edition
+    const existingRole = await UserRole.findOne({
+      where: {
+        userId: userData.id,
+        systemEditionId,
+        isActive: true,
+        revokedAt: null as any,
+      },
+      include: [{
+        model: Role,
+        as: 'role',
+        where: { name: 'edition_admin' },
+      }],
+    });
+
+    if (existingRole) {
+      throw new Error('User already has edition_admin role for this system edition');
     }
 
-    // Generate a random password
-    const generateRandomPassword = () => {
-      const length = 12;
-      const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-      let password = "";
-      
-      // Ensure at least one character from each required category
-      password += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)]; // uppercase
-      password += "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)]; // lowercase
-      password += "0123456789"[Math.floor(Math.random() * 10)]; // number
-      password += "!@#$%^&*"[Math.floor(Math.random() * 8)]; // special
-      
-      // Fill the rest
-      for (let i = password.length; i < length; i++) {
-        password += charset[Math.floor(Math.random() * charset.length)];
-      }
-      
-      // Shuffle the password
-      return password.split('').sort(() => 0.5 - Math.random()).join('');
+    // Find the edition_admin role
+    const editionAdminRole = await Role.findOne({ where: { name: 'edition_admin' } });
+    const editionAdminRoleData = editionAdminRole?.get({ plain: true });
+    if (!editionAdminRoleData) {
+      throw new Error('Edition admin role not found');
+    }
+
+    // Create user role assignment
+    const userRoleData: any = {
+      userId: userData.id,
+      roleId: editionAdminRoleData.id,
+      systemEditionId,
+      isActive: true,
+      grantedBy: createdBy,
+      grantedAt: new Date(),
     };
 
-    const randomPassword = generateRandomPassword();
-    const hashedPassword = await bcrypt.hash(randomPassword, config.app.bcryptSaltRounds);
-
-    // Create the edition admin user
-    const editionAdmin = await User.create({
-      firstName: adminData.firstName,
-      lastName: adminData.lastName,
-      email: adminData.email,
-      password: hashedPassword,
-      role: 'edition_admin',
-      systemEditionId: id,
-      isActive: true,
-      emailVerified: false,
-      seatAssigned: false,
-      licenseType: 'none',
-      delegateCount: 0,
-      createdBy: adminData.createdBy,
-      ...(adminData.expirationDate && { expirationDate: adminData.expirationDate }),
-    });
-
-    // Send welcome email with credentials
-    try {
-      await notificationService.sendEditionAdminWelcomeEmail(
-        adminData.email,
-        adminData.firstName,
-        systemEdition.name,
-        randomPassword,
-        adminData.expirationDate
-      );
-    } catch (error) {
-      console.error('Failed to send welcome email:', error);
-      // Don't throw error here as the user was created successfully
+    if (expirationDate) {
+      userRoleData.expiresAt = expirationDate;
     }
 
-    // Log the creation
-    await AuditLog.create({
-      systemEditionId: id,
-      userId: adminData.createdBy,
-      action: 'create',
-      module: 'users',  // Changed from 'edition_admin' to 'users' as it's a user-related action
-      description: `Created edition admin: ${adminData.firstName} ${adminData.lastName} (${adminData.email})`,
-    });
+    const userRole = await UserRole.create(userRoleData);
+    const userRoleDataResponse = userRole.get({ plain: true });
+
+    // Set this as the user's active role if they don't have one
+    if (!userData.activeUserRoleId) {
+      await user.update({ activeUserRoleId: userRoleDataResponse.id });
+    }
+
+    const updatedUser = await User.findByPk(userData.id);
+    const updatedUserDataResponse = updatedUser?.getPlainData() as UserAttributes;
 
     return {
-      user: {
-        ...editionAdmin.toJSON(),
-        expiration: !!editionAdmin.expirationDate, // Boolean flag for frontend
-      },
-      tempPassword: randomPassword, // Return the temporary password for communication to the admin
-      message: 'Edition admin created successfully',
+      user: updatedUserDataResponse,
+      userRole: userRoleDataResponse,
     };
   }
 
@@ -741,22 +922,34 @@ export class SystemEditionService {
     lastName?: string;
     email?: string;
     expirationDate?: Date;
-    lastUpdatedBy?: string;
+    lastUpdatedBy: string;
   }) {
-    // Find the edition admin
-    const editionAdmin = await User.findOne({
+    // First verify the user has the edition_admin role for this system edition
+    const userRole = await UserRole.findOne({
       where: {
-        id: adminId,
-        systemEditionId: systemEditionId,
-        role: 'edition_admin',
+        userId: adminId,
+        systemEditionId,
+        isActive: true,
+        revokedAt: null as any,
       },
+      include: [{
+        model: Role,
+        as: 'role',
+        where: { name: 'edition_admin' },
+      }],
     });
 
-    if (!editionAdmin) {
+    if (!userRole) {
       throw new Error('Edition admin not found');
     }
 
-    const editionAdminData = editionAdmin?.get({ plain: true });
+    // Now fetch the user details
+    const editionAdmin = await User.findByPk(adminId);
+    if (!editionAdmin) {
+      throw new Error('User not found');
+    }
+
+    const editionAdminData = editionAdmin?.getPlainData();
 
     // Check if email is being changed and if it's already taken by another user
     if (updateData.email && updateData.email !== editionAdminData.email) {
@@ -773,7 +966,7 @@ export class SystemEditionService {
 
     // Update the edition admin
     const updatedAdmin = await editionAdmin.update(updateData);
-    const updatedAdminData = updatedAdmin?.get({ plain: true });
+    const updatedAdminData = updatedAdmin?.getPlainData();
 
     await this.logActivity(
       systemEditionId,
@@ -794,18 +987,14 @@ export class SystemEditionService {
   async deleteSystemEditionEditionAdmin(systemEditionId: string, adminId: string, deletedBy: string) {
     // Find the edition admin
     const editionAdmin = await User.findOne({
-      where: {
-        id: adminId,
-        systemEditionId: systemEditionId,
-        role: 'edition_admin',
-      },
+      where: { id: adminId },
     });
 
     if (!editionAdmin) {
       throw new Error('Edition admin not found');
     }
 
-    const editionAdminData = editionAdmin?.get({ plain: true });
+    const editionAdminData = editionAdmin?.getPlainData();
 
     // Soft delete the edition admin
     await editionAdmin.destroy();
@@ -851,4 +1040,4 @@ export class SystemEditionService {
   }
 }
 
-export const systemEditionService = new SystemEditionService(); 
+export const systemEditionService = new SystemEditionService();

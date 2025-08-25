@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { UserController } from '../controllers/UserController.js';
 import { authenticateToken, authorize } from '../../../shared/middleware/auth.js';
 import { resolveContext } from '../../../shared/middleware/contextResolver.js';
+import UserController from '../controllers/UserController.js';
 
 const router = Router();
 
@@ -20,6 +20,7 @@ router.put('/profile/password', UserController.changePasswordValidation, UserCon
 
 // User management routes (scoped by role and context)
 router.post('/', authorize('super_admin', 'edition_admin', 'company_admin'), UserController.createUserValidation, UserController.createUser);
+router.post('/with-user-roles', authorize('super_admin'), UserController.createUserWithUserRoles);
 router.get('/', authorize('super_admin', 'edition_admin', 'company_admin'), UserController.getAllUsers);
 router.get('/:id', authorize('super_admin', 'edition_admin', 'company_admin'), UserController.getUserById);
 router.put('/:id', authorize('super_admin', 'edition_admin', 'company_admin'), UserController.updateValidation, UserController.updateUser);

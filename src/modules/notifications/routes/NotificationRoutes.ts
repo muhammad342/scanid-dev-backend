@@ -3,8 +3,6 @@ import { notificationController } from '../controllers/NotificationController.js
 import { validateRequest } from '../../../shared/middleware/validation.js';
 import { body } from 'express-validator';
 import { authenticateToken } from '../../../shared/middleware/auth.js';
-import { requirePermission } from '../../../acl/middleware/authorization.js';
-import { Permission } from '../../../acl/types/index.js';
 
 const router = express.Router();
 
@@ -33,7 +31,8 @@ const validateNewUserNotification = [
   body('newUser.email').isEmail().withMessage('Invalid user email address'),
   body('newUser.firstName').notEmpty().withMessage('User first name is required'),
   body('newUser.lastName').notEmpty().withMessage('User last name is required'),
-  body('newUser.role').notEmpty().withMessage('User role is required'),
+  body('newUser.roles').isArray().withMessage('User roles must be an array'),
+  body('newUser.roles.*.roleName').notEmpty().withMessage('Role name is required'),
 ];
 
 // Middleware to validate edition update notification request
@@ -55,7 +54,6 @@ const validateSeatAssignmentNotification = [
 router.post(
   '/test',
   authenticateToken,
-  requirePermission(Permission.UPDATE_SYSTEM_SETTINGS),
   validateEmail,
   validateRequest,
   notificationController.sendTestEmail
@@ -64,7 +62,6 @@ router.post(
 router.post(
   '/welcome',
   authenticateToken,
-  requirePermission(Permission.CREATE_USER),
   validateWelcomeEmail,
   validateRequest,
   notificationController.sendWelcomeEmail
@@ -80,7 +77,6 @@ router.post(
 router.post(
   '/new-user',
   authenticateToken,
-  requirePermission(Permission.CREATE_USER),
   validateNewUserNotification,
   validateRequest,
   notificationController.sendNewUserNotification
@@ -89,7 +85,6 @@ router.post(
 router.post(
   '/edition-update',
   authenticateToken,
-  requirePermission(Permission.UPDATE_EDITION),
   validateEditionUpdateNotification,
   validateRequest,
   notificationController.sendEditionUpdateNotification
@@ -98,7 +93,6 @@ router.post(
 router.post(
   '/seat-assignment',
   authenticateToken,
-  requirePermission(Permission.UPDATE_SEAT_MANAGEMENT),
   validateSeatAssignmentNotification,
   validateRequest,
   notificationController.sendSeatAssignmentNotification

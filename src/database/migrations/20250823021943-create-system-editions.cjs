@@ -1,12 +1,14 @@
 'use strict';
 
+/** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  up: async (queryInterface, Sequelize) => {
+  up: async function (queryInterface, Sequelize) {
     await queryInterface.createTable('system_editions', {
       id: {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4,
         primaryKey: true,
+        allowNull: false,
       },
       name: {
         type: Sequelize.STRING,
@@ -67,6 +69,17 @@ module.exports = {
           expirationDate: null
         },
       },
+      certification_settings: {
+        type: Sequelize.JSONB,
+        allowNull: false,
+        defaultValue: {
+          useMasterPin: true,
+          useDocumentViewPin: false,
+          reminderEnabled: true,
+          reminderDays: [7, 30],
+          expirationDate: null
+        },
+      },
       created_by: {
         type: Sequelize.UUID,
         allowNull: false,
@@ -74,6 +87,8 @@ module.exports = {
           model: 'users',
           key: 'id',
         },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT',
       },
       last_updated_by: {
         type: Sequelize.UUID,
@@ -82,6 +97,8 @@ module.exports = {
           model: 'users',
           key: 'id',
         },
+        onUpdate: 'CASCADE',
+        onDelete: 'RESTRICT',
       },
       created_at: {
         type: Sequelize.DATE,
@@ -100,17 +117,15 @@ module.exports = {
     });
 
     // Add indexes
-    await queryInterface.addIndex('system_editions', ['name'], {
+    await queryInterface.addIndex('system_editions', ['name'], { 
       unique: true,
-      where: {
-        deleted_at: null,
-      },
+      where: { deleted_at: null }
     });
     await queryInterface.addIndex('system_editions', ['archived']);
     await queryInterface.addIndex('system_editions', ['created_by']);
   },
 
-  down: async (queryInterface, Sequelize) => {
+  down: async function (queryInterface, Sequelize) {
     await queryInterface.dropTable('system_editions');
   }
-}; 
+};

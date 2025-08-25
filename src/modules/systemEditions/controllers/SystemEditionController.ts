@@ -102,10 +102,19 @@ export const getSystemEditionById = asyncHandler(async (req: Request, res: Respo
 });
 
 export const getEditionAdminSystemEdition = asyncHandler(async (req: RequestWithUser, res: Response) => {
-  const systemEditionId = req.user?.systemEditionId;
+  const user = req.user?.getPlainData();
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
 
   if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID is required');
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
@@ -121,12 +130,12 @@ export const getEditionAdminSystemEdition = asyncHandler(async (req: RequestWith
 
 // Create system edition
 export const createSystemEdition = asyncHandler(async (req: RequestWithUser, res: Response) => {
-  const userId = req.user?.id;
+  const user = req.user?.getPlainData();
   
   const systemEditionData = {
     ...req.body,
-    createdBy: userId,
-    lastUpdatedBy: userId
+    createdBy: user?.id,
+    lastUpdatedBy: user?.id
   };
 
   try {
@@ -143,21 +152,28 @@ export const createSystemEdition = asyncHandler(async (req: RequestWithUser, res
 
 // Update system edition
 export const updateSystemEdition = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id } = req.params;
   const updateData = req.body;
-  const userId = req.user?.id;
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
 
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
     return;
   }
 
+  const systemEditionId = id;
+
   try {
     const systemEditionData = {
       ...updateData,
-      lastUpdatedBy: userId
+      lastUpdatedBy: user?.id
     };
-    const systemEdition = await systemEditionService.updateSystemEdition(id, systemEditionData);
+    const systemEdition = await systemEditionService.updateSystemEdition(systemEditionId, systemEditionData);
 
     if (!systemEdition) {
       sendNotFound(res, 'System edition not found');
@@ -176,20 +192,27 @@ export const updateSystemEdition = asyncHandler(async (req: RequestWithUser, res
 
 // Edition Admin Update system edition
 export const updateEditionAdminSystemEdition = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const updateData = req.body;
-  const userId = req.user?.id;
 
-  const systemEditionId = req.user?.systemEditionId;
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
 
   if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID not found');
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
   try {
     const systemEditionData = {
       ...updateData,
-      lastUpdatedBy: userId
+      lastUpdatedBy: user?.id
     };
     const systemEdition = await systemEditionService.updateSystemEdition(systemEditionId, systemEditionData);
 
@@ -210,15 +233,20 @@ export const updateEditionAdminSystemEdition = asyncHandler(async (req: RequestW
 
 // Delete system edition
 export const deleteSystemEdition = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id } = req.params;
-  const userId = req.user?.id;
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
 
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
     return;
   }
 
-  const success = await systemEditionService.deleteSystemEdition(id, userId || '');
+  const success = await systemEditionService.deleteSystemEdition(id, user?.id || '');
 
   if (!success) {
     sendNotFound(res, 'System edition not found');
@@ -229,22 +257,31 @@ export const deleteSystemEdition = asyncHandler(async (req: RequestWithUser, res
 });
 
 // Get system edition overview
-export const getSystemEditionOverview = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  if (!id) {
-    sendBadRequest(res, 'System edition ID is required');
+export const getSystemEditionOverview = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
+  console.log("user", user);
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
     return;
   }
 
-  const overview = await systemEditionService.getSystemEditionOverview(id);
+  const systemEditionId = req.params['id'];
 
-  if (!overview) {
-    sendNotFound(res, 'System edition not found');
+  if (!systemEditionId) {
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
-  sendSuccess(res, overview, 'System edition overview retrieved successfully');
+  try {
+    const systemEdition = await systemEditionService.getSystemEditionOverview(systemEditionId);
+    sendSuccess(res, systemEdition, 'System edition overview retrieved successfully');
+  } catch (error) {
+    if (error instanceof Error) {
+      sendBadRequest(res, error.message);
+    } else {
+      throw error;
+    }
+  }
 });
 
 // Get system edition companies
@@ -294,11 +331,11 @@ export const getSystemEditionUsers = asyncHandler(async (req: Request, res: Resp
     page,
     limit,
     search,
-    role,
+    roleName: role,
   });
 
   console.log('Backend - Result users count:', result.users.length);
-  console.log('Backend - Result users roles:', result.users.map(u => u.role));
+  console.log('Backend - Result users roles:', result.users.map(u => u.userRoles?.map(ur => ur.role?.name)));
 
   sendPaginatedResponse(
     res,
@@ -381,21 +418,28 @@ export const getSystemEditionSeatManagement = asyncHandler(async (req: Request, 
 
 // Update system edition seat management
 export const updateSystemEditionSeatManagement = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id } = req.params;
   const updateData = req.body;
-  const userId = req.user?.id;
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
 
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
     return;
   }
 
+  const systemEditionId = id;
+
   try {
     const seatManagementData = {
       ...updateData,
-      lastUpdatedBy: userId
+      lastUpdatedBy: user?.id
     };
-    const seatManagement = await systemEditionService.updateSystemEditionSeatManagement(id, seatManagementData);
+    const seatManagement = await systemEditionService.updateSystemEditionSeatManagement(systemEditionId, seatManagementData);
 
     if (!seatManagement) {
       sendNotFound(res, 'System edition seat management not found');
@@ -433,9 +477,18 @@ export const getSystemEditionCoBranding = asyncHandler(async (req: Request, res:
 
 // Get Edition Admin system edition co-branding
 export const getEditionAdminSystemEditionCoBranding = asyncHandler(async (req: RequestWithUser, res: Response) => {
-  const systemEditionId = req.user?.systemEditionId;
+  const user = req.user?.getPlainData();
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
+
   if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID not found');
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
@@ -451,16 +504,25 @@ export const getEditionAdminSystemEditionCoBranding = asyncHandler(async (req: R
 
 // Update Edition Admin system edition co-branding
 export const updateEditionAdminSystemEditionCoBranding = asyncHandler(async (req: RequestWithUser, res: Response) => {
-  const systemEditionId = req.user?.systemEditionId;
-  if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID not found');
+  const user = req.user?.getPlainData();
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
     return;
   }
   const updateData = req.body;
-  const userId = req.user?.id;
+  const userId = user?.id;
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
 
   if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID is required');
+    sendBadRequest(res, 'System edition ID not found in user context');
+    return;
+  }
+
+  if (!userId) {
+    sendBadRequest(res, 'User ID is required');
     return;
   }
 
@@ -488,21 +550,29 @@ export const updateEditionAdminSystemEditionCoBranding = asyncHandler(async (req
 
 // Update system edition co-branding
 export const updateSystemEditionCoBranding = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id } = req.params;
   const updateData = req.body;
-  const userId = req.user?.id;
+  const userId = user?.id;
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
 
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
     return;
   }
 
+  const systemEditionId = id;
+
   try {
     const coBrandingData = {
       ...updateData,
       lastUpdatedBy: userId
     };
-    const coBranding = await systemEditionService.updateSystemEditionCoBranding(id, coBrandingData);
+    const coBranding = await systemEditionService.updateSystemEditionCoBranding(systemEditionId, coBrandingData);
 
     if (!coBranding) {
       sendNotFound(res, 'System edition co-branding not found');
@@ -521,9 +591,15 @@ export const updateSystemEditionCoBranding = asyncHandler(async (req: RequestWit
 
 // Upload system edition logo
 export const uploadSystemEditionLogo = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id } = req.params;
   const file = (req as any).file;
-  const userId = req.user?.id;
+  const userId = user?.id;
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
 
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
@@ -535,8 +611,10 @@ export const uploadSystemEditionLogo = asyncHandler(async (req: RequestWithUser,
     return;
   }
 
+  const systemEditionId = id;
+
   try {
-    const logoUrl = await systemEditionService.uploadSystemEditionLogo(id, file, userId || '');
+    const logoUrl = await systemEditionService.uploadSystemEditionLogo(systemEditionId, file, userId || '');
     sendSuccess(res, { logoUrl }, 'System edition logo uploaded successfully');
   } catch (error) {
     if (error instanceof Error) {
@@ -549,12 +627,21 @@ export const uploadSystemEditionLogo = asyncHandler(async (req: RequestWithUser,
 
 // Upload edition admin system edition logo
 export const uploadEditionAdminSystemEditionLogo = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const file = (req as any).file;
-  const userId = req.user?.id;
-  const systemEditionId = req.user?.systemEditionId;
+  const userId = user?.id;
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
 
   if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID not found');
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
@@ -603,12 +690,27 @@ export const getSystemEditionDelegateAccess = asyncHandler(async (req: Request, 
 
 // Create system edition delegate access
 export const createSystemEditionDelegateAccess = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id } = req.params;
   const delegateData = req.body;
-  const userId = req.user?.id;
+  const userId = user?.id;
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
 
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
+
+  if (!systemEditionId) {
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
@@ -617,7 +719,7 @@ export const createSystemEditionDelegateAccess = asyncHandler(async (req: Reques
       ...delegateData,
       createdBy: userId
     };
-    const delegateAccess = await systemEditionService.createSystemEditionDelegateAccess(id, delegateAccessData);
+    const delegateAccess = await systemEditionService.createSystemEditionDelegateAccess(systemEditionId, delegateAccessData);
     sendCreated(res, delegateAccess, 'System edition delegate access created successfully');
   } catch (error) {
     if (error instanceof Error) {
@@ -682,9 +784,15 @@ export const getSystemEditionEditionAdmin = asyncHandler(async (req: Request, re
 
 // Create system edition edition admin
 export const createSystemEditionEditionAdmin = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id } = req.params;
   const { firstName, lastName, email, expirationDate } = req.body;
-  const userId = req.user?.id;
+  const userId = user?.id;
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
 
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
@@ -695,6 +803,8 @@ export const createSystemEditionEditionAdmin = asyncHandler(async (req: RequestW
     sendBadRequest(res, 'First name, last name, and email are required');
     return;
   }
+
+  const systemEditionId = id;
 
   try {
     const adminData: {
@@ -714,10 +824,11 @@ export const createSystemEditionEditionAdmin = asyncHandler(async (req: RequestW
       adminData.expirationDate = new Date(expirationDate);
     }
 
-    const result = await systemEditionService.createSystemEditionEditionAdmin(id, adminData);
+    const result = await systemEditionService.createSystemEditionEditionAdmin(systemEditionId, adminData);
 
     sendCreated(res, result, 'System edition edition admin created successfully');
   } catch (error) {
+    console.log("[SystemEditionController-createSystemEditionEditionAdmin] Error creating system edition edition admin", error);
     if (error instanceof Error) {
       sendBadRequest(res, error.message);
     } else {
@@ -747,7 +858,10 @@ export const updateSystemEditionEditionAdmin = asyncHandler(async (req: Request,
       lastName?: string;
       email?: string;
       expirationDate?: Date;
-    } = {};
+      lastUpdatedBy: string;
+    } = {
+      lastUpdatedBy: 'system', // Default value since we don't have user context in this endpoint
+    };
 
     if (firstName) updateData.firstName = firstName;
     if (lastName) updateData.lastName = lastName;
@@ -768,8 +882,14 @@ export const updateSystemEditionEditionAdmin = asyncHandler(async (req: Request,
 
 // Delete system edition edition admin
 export const deleteSystemEditionEditionAdmin = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id, adminId } = req.params;
-  const userId = req.user?.id;
+  const userId = user?.id;
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
 
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
@@ -781,8 +901,17 @@ export const deleteSystemEditionEditionAdmin = asyncHandler(async (req: RequestW
     return;
   }
 
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
+
+  if (!systemEditionId) {
+    sendBadRequest(res, 'System edition ID not found in user context');
+    return;
+  }
+
   try {
-    await systemEditionService.deleteSystemEditionEditionAdmin(id, adminId, userId || '');
+    await systemEditionService.deleteSystemEditionEditionAdmin(systemEditionId, adminId, userId || '');
     sendNoContent(res);
   } catch (error) {
     if (error instanceof Error) {
@@ -795,20 +924,13 @@ export const deleteSystemEditionEditionAdmin = asyncHandler(async (req: RequestW
 
 // Update system edition user
 export const updateSystemEditionUser = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { userId } = req.params;
+  const { systemEditionId } = req.params;
   const updateData = req.body;
-  const user = req.user;
 
   if (!user) {
     sendBadRequest(res, 'User authentication required');
-    return;
-  }
-
-  // Get systemEditionId from the authenticated user
-  const systemEditionId = user.systemEditionId;
-
-  if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
@@ -817,10 +939,29 @@ export const updateSystemEditionUser = asyncHandler(async (req: RequestWithUser,
     return;
   }
 
+  if (!systemEditionId) {
+    sendBadRequest(res, 'System edition ID is required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const currentSystemEditionId = userContext?.systemEditionId;
+
+  if (!currentSystemEditionId) {
+    sendBadRequest(res, 'System edition ID not found in user context');
+    return;
+  }
+
+  if (currentSystemEditionId !== systemEditionId) {
+    sendBadRequest(res, 'User does not belong to your system edition');
+    return;
+  }
+
   try {
     // Verify the user belongs to the system edition
     const targetUser = await userService.getUserById(userId);
-    if (!targetUser || targetUser.systemEditionId !== systemEditionId) {
+    if (!targetUser || targetUser.activeRole?.systemEditionId !== systemEditionId) {
       sendBadRequest(res, 'User does not belong to your system edition');
       return;
     }
@@ -844,16 +985,17 @@ export const updateSystemEditionUser = asyncHandler(async (req: RequestWithUser,
 
 // Delete system edition user
 export const deleteSystemEditionUser = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { userId } = req.params;
-  const user = req.user;
 
   if (!user) {
     sendBadRequest(res, 'User authentication required');
     return;
   }
 
-  // Get systemEditionId from the authenticated user
-  const systemEditionId = user.systemEditionId;
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
 
   if (!systemEditionId) {
     sendBadRequest(res, 'System edition ID not found in user context');
@@ -868,15 +1010,15 @@ export const deleteSystemEditionUser = asyncHandler(async (req: RequestWithUser,
   try {
     // Verify the user belongs to the system edition
     const targetUser = await userService.getUserById(userId);
-    if (!targetUser || targetUser.systemEditionId !== systemEditionId) {
+    if (!targetUser || targetUser.activeRole?.systemEditionId !== systemEditionId) {
       sendBadRequest(res, 'User does not belong to your system edition');
       return;
     }
 
     // Handle seat assignment - decrement company used seats if user had a seat assigned
-    if (targetUser.seatAssigned && targetUser.companyId) {
+    if (targetUser.seatAssigned && targetUser.activeRole?.companyId) {
       try {
-        const company = await Company.findByPk(targetUser.companyId);
+        const company = await Company.findByPk(targetUser.activeRole.companyId);
         if (company) {
           const currentUsedSeats = company.usedSeats || 0;
           const newUsedSeats = Math.max(0, currentUsedSeats - 1);
@@ -923,10 +1065,19 @@ export const getSystemEditionTags = asyncHandler(async (req: Request, res: Respo
 
 // Get system edition tags
 export const getEditionAdminSystemEditionTags = asyncHandler(async (req: RequestWithUser, res: Response) => {
-  const systemEditionId = req.user?.systemEditionId;
+  const user = req.user?.getPlainData();
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
 
   if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID not found');
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
@@ -953,10 +1104,18 @@ export const getSystemEditionDocumentTags = asyncHandler(async (req: Request, re
 
 // Get system edition document tags for edition admin
 export const getSystemEditionAdminDocumentTags = asyncHandler(async (req: RequestWithUser, res: Response) => {
-  const systemEditionId = req.user?.systemEditionId;
+  const user = req.user?.getPlainData();
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const systemEditionId = req.params['id'];
 
   if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID not found');
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
@@ -967,10 +1126,19 @@ export const getSystemEditionAdminDocumentTags = asyncHandler(async (req: Reques
 
 // Get system edition certificate tags for edition admin
 export const getSystemEditionAdminCertificateTags = asyncHandler(async (req: RequestWithUser, res: Response) => {
-  const systemEditionId = req.user?.systemEditionId;
+  const user = req.user?.getPlainData();
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
 
   if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID not found');
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
@@ -1008,9 +1176,15 @@ export const getSystemEditionCertificateTags = asyncHandler(async (req: Request,
 });
 
 // Create system edition tag
-export const createSystemEditionTag = asyncHandler(async (req: Request, res: Response) => {
+export const createSystemEditionTag = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id } = req.params;
   const tagData = { ...req.body, systemEditionId: id };
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
 
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
@@ -1030,10 +1204,19 @@ export const createSystemEditionTag = asyncHandler(async (req: Request, res: Res
 });
 
 export const createEditionAdminSystemEditionTag = asyncHandler(async (req: RequestWithUser, res: Response) => {
-  const systemEditionId = req.user?.systemEditionId;
+  const user = req.user?.getPlainData();
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
 
   if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID not found');
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
@@ -1052,14 +1235,21 @@ export const createEditionAdminSystemEditionTag = asyncHandler(async (req: Reque
 });
 
 // Create system edition document tag
-export const createSystemEditionDocumentTag = asyncHandler(async (req: Request, res: Response) => {
+export const createSystemEditionDocumentTag = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id } = req.params;
-  const tagData = { ...req.body, systemEditionId: id, type: 'document' as const };
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
 
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
     return;
   }
+  
+  const tagData = { ...req.body, systemEditionId: id, type: 'document' as const };
 
   try {
     const tag = await tagService.createTag(tagData);
@@ -1075,11 +1265,20 @@ export const createSystemEditionDocumentTag = asyncHandler(async (req: Request, 
 
 // Create edition admin document tag (gets user from request)
 export const createEditionAdminDocumentTag = asyncHandler(async (req: RequestWithUser, res: Response) => {
-  const systemEditionId = req.user?.systemEditionId;
-  const userId = req.user?.id;
+  const user = req.user?.getPlainData();
+  const userId = user?.id;
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
 
   if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID not found');
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
@@ -1118,12 +1317,25 @@ export const createEditionAdminDocumentTag = asyncHandler(async (req: RequestWit
 });
 
 // Create system edition notes tag
-export const createSystemEditionNotesTag = asyncHandler(async (req: Request, res: Response) => {
+export const createSystemEditionNotesTag = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id } = req.params;
   const tagData = { ...req.body, systemEditionId: id, type: 'note' as const };
 
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
+
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
+    return;
+  }
+
+  const systemEditionId = req.params['id'];
+
+  if (!systemEditionId) {
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
@@ -1140,9 +1352,15 @@ export const createSystemEditionNotesTag = asyncHandler(async (req: Request, res
 });
 
 // Update system edition tag
-export const updateSystemEditionTag = asyncHandler(async (req: Request, res: Response) => {
+export const updateSystemEditionTag = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id, tagId } = req.params;
   const updateData = req.body;
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
 
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
@@ -1156,12 +1374,6 @@ export const updateSystemEditionTag = asyncHandler(async (req: Request, res: Res
 
   try {
     const tag = await tagService.updateTag(tagId, updateData);
-
-    if (!tag) {
-      sendNotFound(res, 'Tag not found');
-      return;
-    }
-
     sendSuccess(res, tag, 'System edition tag updated successfully');
   } catch (error) {
     if (error instanceof Error) {
@@ -1174,13 +1386,21 @@ export const updateSystemEditionTag = asyncHandler(async (req: Request, res: Res
 
 // Update system edition tag
 export const updateEditionAdminTag = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { tagId } = req.params;
   const updateData = req.body;
 
-  const systemEditionId = req.user?.systemEditionId;
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
 
   if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID not found');
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
@@ -1208,8 +1428,14 @@ export const updateEditionAdminTag = asyncHandler(async (req: RequestWithUser, r
 });
 
 // Delete system edition tag
-export const deleteSystemEditionTag = asyncHandler(async (req: Request, res: Response) => {
+export const deleteSystemEditionTag = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id, tagId } = req.params;
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
 
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
@@ -1233,12 +1459,20 @@ export const deleteSystemEditionTag = asyncHandler(async (req: Request, res: Res
 
 // Delete system edition tag
 export const deleteEditionAdminTag = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { tagId } = req.params;
 
-  const systemEditionId = req.user?.systemEditionId;
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
 
   if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID not found');
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
@@ -1258,17 +1492,32 @@ export const deleteEditionAdminTag = asyncHandler(async (req: RequestWithUser, r
 });
 
 // Update system edition tag order
-export const updateSystemEditionTagOrder = asyncHandler(async (req: Request, res: Response) => {
+export const updateSystemEditionTagOrder = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id } = req.params;
   const { tagUpdates } = req.body;
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
 
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
     return;
   }
 
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
+
+  if (!systemEditionId) {
+    sendBadRequest(res, 'System edition ID not found in user context');
+    return;
+  }
+
   if (!Array.isArray(tagUpdates)) {
-    sendBadRequest(res, 'tagUpdates must be an array');
+    sendBadRequest(res, 'Tag updates must be an array');
     return;
   }
 
@@ -1285,12 +1534,20 @@ export const updateSystemEditionTagOrder = asyncHandler(async (req: Request, res
 });
 
 export const updateEditionAdminSystemEditionTagOrder = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { tagUpdates } = req.body;
 
-  const systemEditionId = req.user?.systemEditionId;
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
 
   if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID not found');
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 
@@ -1312,9 +1569,15 @@ export const updateEditionAdminSystemEditionTagOrder = asyncHandler(async (req: 
 });
 
 // Merge system edition tags
-export const mergeSystemEditionTags = asyncHandler(async (req: Request, res: Response) => {
+export const mergeSystemEditionTags = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { id } = req.params;
   const { sourceTagIds, targetTagId, newTagName } = req.body;
+
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
 
   if (!id) {
     sendBadRequest(res, 'System edition ID is required');
@@ -1322,12 +1585,12 @@ export const mergeSystemEditionTags = asyncHandler(async (req: Request, res: Res
   }
 
   if (!Array.isArray(sourceTagIds) || sourceTagIds.length === 0) {
-    sendBadRequest(res, 'sourceTagIds must be a non-empty array');
+    sendBadRequest(res, 'Source tag IDs must be a non-empty array');
     return;
   }
 
-  if (!targetTagId && !newTagName) {
-    sendBadRequest(res, 'Either targetTagId or newTagName must be provided');
+  if (!targetTagId) {
+    sendBadRequest(res, 'Target tag ID is required');
     return;
   }
 
@@ -1345,11 +1608,20 @@ export const mergeSystemEditionTags = asyncHandler(async (req: Request, res: Res
 
 // Merge edition admin system edition tags
 export const mergeEditionAdminTags = asyncHandler(async (req: RequestWithUser, res: Response) => {
+  const user = req.user?.getPlainData();
   const { sourceTagIds, targetTagId, newTagName } = req.body;
 
-  const systemEditionId = req.user?.systemEditionId;
+  if (!user) {
+    sendBadRequest(res, 'User authentication required');
+    return;
+  }
+
+  // Get systemEditionId from the user's current context
+  const userContext = await req.user?.getCurrentContext();
+  const systemEditionId = userContext?.systemEditionId;
+
   if (!systemEditionId) {
-    sendBadRequest(res, 'System edition ID not found');
+    sendBadRequest(res, 'System edition ID not found in user context');
     return;
   }
 

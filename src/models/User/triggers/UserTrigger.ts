@@ -25,44 +25,58 @@ export class UserTrigger {
       if (isNewInvitedUser) {
         logger.info(`Sending invitation email to new user: ${userData.email}`);
         
-        // Get company name if available
+        // Get company name and edition name from the user's active role context
         let companyName: string | undefined;
         let editionName: string | undefined;
+        let userRole: string | undefined;
 
-        if (userData.companyId) {
-          try {
-            const company = await Company.findByPk(userData.companyId);
-            if (company) {
-              companyName = company.name;
+        try {
+          // Get the user's active role to determine context
+          const activeRole = await user.getActiveRole();
+          
+          if (activeRole) {
+            userRole = activeRole.role?.name;
+            
+            // Get company name if available from active role
+            if (activeRole.companyId) {
+              try {
+                const company = await Company.findByPk(activeRole.companyId);
+                if (company) {
+                  companyName = company.name;
+                }
+              } catch (error) {
+                logger.warn(`Failed to fetch company name for user ${userData.id}:`, error);
+              }
             }
-          } catch (error) {
-            logger.warn(`Failed to fetch company name for user ${userData.id}:`, error);
+
+            // Get edition name if available from active role
+            if (activeRole.systemEditionId) {
+              try {
+                const edition = await SystemEdition.findByPk(activeRole.systemEditionId);
+                if (edition) {
+                  editionName = edition.name;
+                }
+              } catch (error) {
+                logger.warn(`Failed to fetch edition name for user ${userData.id}:`, error);
+              }
+            }
           }
+        } catch (error) {
+          logger.warn(`Failed to get active role context for user ${userData.id}:`, error);
         }
 
-        // Get edition name if available
-        if (userData.systemEditionId) {
-          try {
-            const edition = await SystemEdition.findByPk(userData.systemEditionId);
-            if (edition) {
-              editionName = edition.name;
-            }
-          } catch (error) {
-            logger.warn(`Failed to fetch edition name for user ${userData.id}:`, error);
-          }
-        }
+        const isTempPassword = await bcrypt.compare("placeholder_password_will_be_replaced", userData.password);
 
-        // Generate a new secure password for the user
-        const newPassword = this.generateSecurePassword();
-        
-        // Hash the new password
-        const hashedPassword = await bcrypt.hash(newPassword, config.app.bcryptSaltRounds);
-        
-        // Update the user's password in the database
-        await User.update(
-          { password: hashedPassword },
-          { where: { id: userData.id } }
-        );
+        let newPassword = "";
+        if(isTempPassword) {
+          newPassword = this.generateSecurePassword();
+          const hashedPassword = await bcrypt.hash(newPassword, config.app.bcryptSaltRounds);
+
+          await User.update(
+            { password: hashedPassword },
+            { where: { id: userData.id } }
+          );
+        }
         
         logger.info(`Password updated for user ${userData.email} in trigger [UserTrigger-onCreate]`);
 
@@ -70,7 +84,7 @@ export class UserTrigger {
         await notificationService.sendUserInvitationEmail(
           userData.email,
           userData.firstName,
-          userData.role,
+          userRole || 'user', // Default to 'user' if no role found
           newPassword, // Send the actual password (not hashed)
           companyName || editionName,
           userData.expirationDate

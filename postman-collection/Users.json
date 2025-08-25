@@ -1,9 +1,9 @@
 {
   "info": {
     "name": "Users",
-    "description": "Complete API collection for User management. Includes endpoints for authentication, user profile management, and user administration with context-based access control for different roles (super admin, edition admin, company admin, and users).",
+    "description": "Complete API collection for User management with multi-role support. Includes endpoints for authentication, user profile management, user administration, and role management with context-based access control for different roles (super admin, edition admin, company admin, channel admin, user, and delegate).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "1.0.0"
+    "version": "2.0.0"
   },
   "auth": {
     "type": "bearer",
@@ -39,6 +39,11 @@
     {
       "key": "company_id",
       "value": "your_company_id_here",
+      "type": "string"
+    },
+    {
+      "key": "channel_id",
+      "value": "your_channel_id_here",
       "type": "string"
     }
   ],
@@ -91,27 +96,44 @@
                   "value": "application/json"
                 }
               ],
-              "body": {
-                "success": true,
-                "message": "Login successful",
-                "data": {
-                  "user": {
-                    "id": "uuid",
-                    "email": "admin@example.com",
-                    "firstName": "John",
-                    "lastName": "Doe",
-                    "role": "super_admin",
-                    "isActive": true,
-                    "emailVerified": true,
-                    "systemEditionId": "uuid",
-                    "companyId": "uuid",
-                    "createdAt": "2024-01-01T00:00:00.000Z",
-                    "updatedAt": "2024-01-01T00:00:00.000Z"
+                              "body": {
+                  "success": true,
+                  "message": "Login successful",
+                  "data": {
+                    "user": {
+                      "id": "uuid",
+                      "email": "admin@example.com",
+                      "firstName": "John",
+                      "lastName": "Doe",
+                      "activeRole": {
+                        "id": "user-role-uuid",
+                        "roleName": "super_admin",
+                        "systemEditionId": "uuid",
+                        "companyId": "uuid",
+                        "channelId": null,
+                        "expiresAt": null
+                      },
+                      "availableRoles": [
+                        {
+                          "id": "user-role-uuid",
+                          "roleName": "super_admin",
+                          "systemEditionId": "uuid",
+                          "companyId": "uuid",
+                          "channelId": null,
+                          "expiresAt": null,
+                          "isActive": true
+                        }
+                      ],
+                      "isActive": true,
+                      "emailVerified": true,
+                      "companyAssociations": ["uuid"],
+                      "createdAt": "2024-01-01T00:00:00.000Z",
+                      "updatedAt": "2024-01-01T00:00:00.000Z"
+                    },
+                    "token": "jwt_token_here"
                   },
-                  "token": "jwt_token_here"
-                },
-                "timestamp": "2024-01-01T00:00:00.000Z"
-              }
+                  "timestamp": "2024-01-01T00:00:00.000Z"
+                }
             }
           ]
         },
@@ -127,7 +149,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"phoneNumber\": \"+1234567890\",\n  \"role\": \"user\"\n}",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"phoneNumber\": \"+1234567890\",\n  \"roles\": [\n    {\n      \"roleName\": \"user\"\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -221,25 +243,42 @@
                   "value": "application/json"
                 }
               ],
-              "body": {
-                "success": true,
-                "message": "User profile retrieved successfully",
-                "data": {
-                  "id": "uuid",
-                  "email": "user@example.com",
-                  "firstName": "John",
-                  "lastName": "Doe",
-                  "role": "user",
-                  "isActive": true,
-                  "emailVerified": true,
-                  "phoneNumber": "+1234567890",
-                  "systemEditionId": "uuid",
-                  "companyId": "uuid",
-                  "createdAt": "2024-01-01T00:00:00.000Z",
-                  "updatedAt": "2024-01-01T00:00:00.000Z"
-                },
-                "timestamp": "2024-01-01T00:00:00.000Z"
-              }
+                              "body": {
+                  "success": true,
+                  "message": "User profile retrieved successfully",
+                  "data": {
+                    "id": "uuid",
+                    "email": "user@example.com",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "activeRole": {
+                      "id": "user-role-uuid",
+                      "roleName": "user",
+                      "systemEditionId": "uuid",
+                      "companyId": "uuid",
+                      "channelId": null,
+                      "expiresAt": null
+                    },
+                    "availableRoles": [
+                      {
+                        "id": "user-role-uuid",
+                        "roleName": "user",
+                        "systemEditionId": "uuid",
+                        "companyId": "uuid",
+                        "channelId": null,
+                        "expiresAt": null,
+                        "isActive": true
+                      }
+                    ],
+                    "isActive": true,
+                    "emailVerified": true,
+                    "phoneNumber": "+1234567890",
+                    "companyAssociations": ["uuid"],
+                    "createdAt": "2024-01-01T00:00:00.000Z",
+                    "updatedAt": "2024-01-01T00:00:00.000Z"
+                  },
+                  "timestamp": "2024-01-01T00:00:00.000Z"
+                }
             }
           ]
         },
@@ -337,7 +376,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"phoneNumber\": \"+1234567890\",\n  \"role\": \"user\",\n  \"isActive\": true,\n  \"emailVerified\": false,\n  \"seatAssigned\": false,\n  \"licenseType\": \"none\"\n}",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"phoneNumber\": \"+1234567890\",\n  \"roles\": [\n    {\n      \"roleName\": \"user\",\n      \"systemEditionId\": \"{{system_edition_id}}\",\n      \"companyId\": \"{{company_id}}\"\n    }\n  ],\n  \"isActive\": true,\n  \"emailVerified\": false,\n  \"seatAssigned\": false,\n  \"licenseType\": \"none\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -373,27 +412,44 @@
                   "value": "application/json"
                 }
               ],
-              "body": {
-                "success": true,
-                "message": "User created successfully",
-                "data": {
-                  "id": "uuid",
-                  "email": "newuser@example.com",
-                  "firstName": "John",
-                  "lastName": "Doe",
-                  "role": "user",
-                  "isActive": true,
-                  "emailVerified": false,
-                  "phoneNumber": "+1234567890",
-                  "systemEditionId": "uuid",
-                  "companyId": "uuid",
-                  "seatAssigned": false,
-                  "licenseType": "none",
-                  "createdAt": "2024-01-01T00:00:00.000Z",
-                  "updatedAt": "2024-01-01T00:00:00.000Z"
-                },
-                "timestamp": "2024-01-01T00:00:00.000Z"
-              }
+                              "body": {
+                  "success": true,
+                  "message": "User created successfully",
+                  "data": {
+                    "id": "uuid",
+                    "email": "newuser@example.com",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "activeRole": {
+                      "id": "user-role-uuid",
+                      "roleName": "user",
+                      "systemEditionId": "uuid",
+                      "companyId": "uuid",
+                      "channelId": null,
+                      "expiresAt": null
+                    },
+                    "availableRoles": [
+                      {
+                        "id": "user-role-uuid",
+                        "roleName": "user",
+                        "systemEditionId": "uuid",
+                        "companyId": "uuid",
+                        "channelId": null,
+                        "expiresAt": null,
+                        "isActive": true
+                      }
+                    ],
+                    "isActive": true,
+                    "emailVerified": false,
+                    "phoneNumber": "+1234567890",
+                    "seatAssigned": false,
+                    "licenseType": "none",
+                    "companyAssociations": ["uuid"],
+                    "createdAt": "2024-01-01T00:00:00.000Z",
+                    "updatedAt": "2024-01-01T00:00:00.000Z"
+                  },
+                  "timestamp": "2024-01-01T00:00:00.000Z"
+                }
             },
             {
               "name": "Error Response - Invalid Role",
@@ -468,7 +524,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"companyadmin@example.com\",\n  \"firstName\": \"Company\",\n  \"lastName\": \"Admin\",\n  \"phoneNumber\": \"+1234567890\",\n  \"role\": \"company_admin\",\n  \"isActive\": true,\n  \"emailVerified\": true,\n  \"expirationDate\": \"2025-12-31T23:59:59.000Z\"\n}",
+              "raw": "{\n  \"email\": \"companyadmin@example.com\",\n  \"firstName\": \"Company\",\n  \"lastName\": \"Admin\",\n  \"phoneNumber\": \"+1234567890\",\n  \"roles\": [\n    {\n      \"roleName\": \"company_admin\",\n      \"systemEditionId\": \"{{system_edition_id}}\",\n      \"companyId\": \"{{company_id}}\"\n    }\n  ],\n  \"isActive\": true,\n  \"emailVerified\": true,\n  \"expirationDate\": \"2025-12-31T23:59:59.000Z\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -504,26 +560,43 @@
                   "value": "application/json"
                 }
               ],
-              "body": {
-                "success": true,
-                "message": "User created successfully",
-                "data": {
-                  "id": "uuid",
-                  "email": "companyadmin@example.com",
-                  "firstName": "Company",
-                  "lastName": "Admin",
-                  "role": "company_admin",
-                  "isActive": true,
-                  "emailVerified": true,
-                  "phoneNumber": "+1234567890",
-                  "systemEditionId": "uuid",
-                  "companyId": "uuid",
-                  "expirationDate": "2025-12-31T23:59:59.000Z",
-                  "createdAt": "2024-01-01T00:00:00.000Z",
-                  "updatedAt": "2024-01-01T00:00:00.000Z"
-                },
-                "timestamp": "2024-01-01T00:00:00.000Z"
-              }
+                              "body": {
+                  "success": true,
+                  "message": "User created successfully",
+                  "data": {
+                    "id": "uuid",
+                    "email": "companyadmin@example.com",
+                    "firstName": "Company",
+                    "lastName": "Admin",
+                    "activeRole": {
+                      "id": "user-role-uuid",
+                      "roleName": "company_admin",
+                      "systemEditionId": "uuid",
+                      "companyId": "uuid",
+                      "channelId": null,
+                      "expiresAt": null
+                    },
+                    "availableRoles": [
+                      {
+                        "id": "user-role-uuid",
+                        "roleName": "company_admin",
+                        "systemEditionId": "uuid",
+                        "companyId": "uuid",
+                        "channelId": null,
+                        "expiresAt": null,
+                        "isActive": true
+                      }
+                    ],
+                    "isActive": true,
+                    "emailVerified": true,
+                    "phoneNumber": "+1234567890",
+                    "expirationDate": "2025-12-31T23:59:59.000Z",
+                    "companyAssociations": ["uuid"],
+                    "createdAt": "2024-01-01T00:00:00.000Z",
+                    "updatedAt": "2024-01-01T00:00:00.000Z"
+                  },
+                  "timestamp": "2024-01-01T00:00:00.000Z"
+                }
             }
           ]
         },
@@ -544,7 +617,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"seatuser@example.com\",\n  \"firstName\": \"Seat\",\n  \"lastName\": \"User\",\n  \"phoneNumber\": \"+1234567890\",\n  \"role\": \"user\",\n  \"isActive\": true,\n  \"emailVerified\": false,\n  \"seatAssigned\": true,\n  \"licenseType\": \"organizational_seat\"\n}",
+              "raw": "{\n  \"email\": \"seatuser@example.com\",\n  \"firstName\": \"Seat\",\n  \"lastName\": \"User\",\n  \"phoneNumber\": \"+1234567890\",\n  \"roles\": [\n    {\n      \"roleName\": \"user\",\n      \"systemEditionId\": \"{{system_edition_id}}\",\n      \"companyId\": \"{{company_id}}\"\n    }\n  ],\n  \"isActive\": true,\n  \"emailVerified\": false,\n  \"seatAssigned\": true,\n  \"licenseType\": \"organizational_seat\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -580,27 +653,44 @@
                   "value": "application/json"
                 }
               ],
-              "body": {
-                "success": true,
-                "message": "User created successfully",
-                "data": {
-                  "id": "uuid",
-                  "email": "seatuser@example.com",
-                  "firstName": "Seat",
-                  "lastName": "User",
-                  "role": "user",
-                  "isActive": true,
-                  "emailVerified": false,
-                  "phoneNumber": "+1234567890",
-                  "systemEditionId": "uuid",
-                  "companyId": "uuid",
-                  "seatAssigned": true,
-                  "licenseType": "organizational_seat",
-                  "createdAt": "2024-01-01T00:00:00.000Z",
-                  "updatedAt": "2024-01-01T00:00:00.000Z"
-                },
-                "timestamp": "2024-01-01T00:00:00.000Z"
-              }
+                              "body": {
+                  "success": true,
+                  "message": "User created successfully",
+                  "data": {
+                    "id": "uuid",
+                    "email": "seatuser@example.com",
+                    "firstName": "Seat",
+                    "lastName": "User",
+                    "activeRole": {
+                      "id": "user-role-uuid",
+                      "roleName": "user",
+                      "systemEditionId": "uuid",
+                      "companyId": "uuid",
+                      "channelId": null,
+                      "expiresAt": null
+                    },
+                    "availableRoles": [
+                      {
+                        "id": "user-role-uuid",
+                        "roleName": "user",
+                        "systemEditionId": "uuid",
+                        "companyId": "uuid",
+                        "channelId": null,
+                        "expiresAt": null,
+                        "isActive": true
+                      }
+                    ],
+                    "isActive": true,
+                    "emailVerified": false,
+                    "phoneNumber": "+1234567890",
+                    "seatAssigned": true,
+                    "licenseType": "organizational_seat",
+                    "companyAssociations": ["uuid"],
+                    "createdAt": "2024-01-01T00:00:00.000Z",
+                    "updatedAt": "2024-01-01T00:00:00.000Z"
+                  },
+                  "timestamp": "2024-01-01T00:00:00.000Z"
+                }
             }
           ]
         },
@@ -616,7 +706,7 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/users?page=1&limit=10&search=&role=&isActive=&emailVerified=",
+              "raw": "{{base_url}}/users?page=1&limit=10&search=&role=&isActive=&emailVerified=&systemEditionId=&channelId=&companyId=",
               "host": ["{{base_url}}"],
               "path": ["users"],
               "query": [
@@ -653,10 +743,28 @@
                   "value": "",
                   "description": "Filter by email verification status (true/false)",
                   "disabled": true
+                },
+                {
+                  "key": "systemEditionId",
+                  "value": "",
+                  "description": "Filter by system edition ID (optional)",
+                  "disabled": true
+                },
+                {
+                  "key": "channelId",
+                  "value": "",
+                  "description": "Filter by channel ID (optional)",
+                  "disabled": true
+                },
+                {
+                  "key": "companyId",
+                  "value": "",
+                  "description": "Filter by company ID (optional)",
+                  "disabled": true
                 }
               ]
             },
-            "description": "Get all users with filtering and pagination. Access is scoped by user role:\n- Super Admin: Can see all users across all editions\n- Edition Admin: Can only see users within their assigned edition\n- Company Admin: Can only see users within their assigned company"
+            "description": "Get all users with filtering and pagination. Access is scoped by user role:\n- Super Admin: Can see all users across all editions\n- Edition Admin: Can only see users within their assigned edition\n- Company Admin: Can only see users within their assigned company\n\nNew filters available:\n- systemEditionId: Filter users by specific system edition\n- channelId: Filter users by specific channel\n- companyId: Filter users by specific company\n\nAll filters are optional and can be combined for precise filtering."
           },
           "response": [
             {
@@ -685,12 +793,29 @@
                     "email": "user1@example.com",
                     "firstName": "John",
                     "lastName": "Doe",
-                    "role": "user",
+                    "activeRole": {
+                      "id": "user-role-uuid",
+                      "roleName": "user",
+                      "systemEditionId": "uuid",
+                      "companyId": "uuid",
+                      "channelId": null,
+                      "expiresAt": null
+                    },
+                    "availableRoles": [
+                      {
+                        "id": "user-role-uuid",
+                        "roleName": "user",
+                        "systemEditionId": "uuid",
+                        "companyId": "uuid",
+                        "channelId": null,
+                        "expiresAt": null,
+                        "isActive": true
+                      }
+                    ],
                     "isActive": true,
                     "emailVerified": true,
                     "phoneNumber": "+1234567890",
-                    "systemEditionId": "uuid",
-                    "companyId": "uuid",
+                    "companyAssociations": ["uuid"],
                     "createdAt": "2024-01-01T00:00:00.000Z",
                     "updatedAt": "2024-01-01T00:00:00.000Z"
                   }
@@ -752,12 +877,28 @@
                   "email": "user@example.com",
                   "firstName": "John",
                   "lastName": "Doe",
-                  "role": "user",
+                  "activeRole": {
+                    "id": "user-role-uuid",
+                    "roleName": "user",
+                    "systemEditionId": "uuid",
+                    "companyId": "uuid",
+                    "channelId": null,
+                    "expiresAt": null
+                  },
+                  "availableRoles": [
+                    {
+                      "id": "user-role-uuid",
+                      "roleName": "user",
+                      "systemEditionId": "uuid",
+                      "companyId": "uuid",
+                      "channelId": null,
+                      "expiresAt": null,
+                      "isActive": true
+                    }
+                  ],
                   "isActive": true,
                   "emailVerified": true,
                   "phoneNumber": "+1234567890",
-                  "systemEditionId": "uuid",
-                  "companyId": "uuid",
                   "createdAt": "2024-01-01T00:00:00.000Z",
                   "updatedAt": "2024-01-01T00:00:00.000Z"
                 },
@@ -783,7 +924,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Updated First Name\",\n  \"lastName\": \"Updated Last Name\",\n  \"email\": \"updated@example.com\",\n  \"phoneNumber\": \"+1987654321\",\n  \"role\": \"company_admin\",\n  \"isActive\": true,\n  \"emailVerified\": true\n}",
+              "raw": "{\n  \"firstName\": \"Updated First Name\",\n  \"lastName\": \"Updated Last Name\",\n  \"email\": \"updated@example.com\",\n  \"phoneNumber\": \"+1987654321\",\n  \"isActive\": true,\n  \"emailVerified\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -823,12 +964,29 @@
                   "email": "updated@example.com",
                   "firstName": "Updated First Name",
                   "lastName": "Updated Last Name",
-                  "role": "company_admin",
+                  "activeRole": {
+                    "id": "user-role-uuid",
+                    "roleName": "user",
+                    "systemEditionId": "uuid",
+                    "companyId": "uuid",
+                    "channelId": null,
+                    "expiresAt": null
+                  },
+                  "availableRoles": [
+                    {
+                      "id": "user-role-uuid",
+                      "roleName": "user",
+                      "systemEditionId": "uuid",
+                      "companyId": "uuid",
+                      "channelId": null,
+                      "expiresAt": null,
+                      "isActive": true
+                    }
+                  ],
                   "isActive": true,
                   "emailVerified": true,
                   "phoneNumber": "+1987654321",
-                  "systemEditionId": "uuid",
-                  "companyId": "uuid",
+                  "companyAssociations": ["uuid"],
                   "createdAt": "2024-01-01T00:00:00.000Z",
                   "updatedAt": "2024-01-01T00:00:00.000Z"
                 },
@@ -869,6 +1027,230 @@
               "_postman_previewlanguage": "json",
               "header": [],
               "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Get Users with Advanced Filtering",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users?page=1&limit=20&systemEditionId={{system_edition_id}}&companyId={{company_id}}&roleName=user&isActive=true",
+              "host": ["{{base_url}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "systemEditionId",
+                  "value": "{{system_edition_id}}",
+                  "description": "Filter by system edition ID"
+                },
+                {
+                  "key": "companyId",
+                  "value": "{{company_id}}",
+                  "description": "Filter by company ID"
+                },
+                {
+                  "key": "roleName",
+                  "value": "user",
+                  "description": "Filter by role name"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true",
+                  "description": "Filter by active status"
+                }
+              ]
+            },
+            "description": "Example of advanced filtering combining multiple parameters:\n- systemEditionId: Filter users by specific system edition\n- companyId: Filter users by specific company\n- roleName: Filter users by specific role\n- isActive: Filter only active users\n\nThis demonstrates how the new filtering system allows for precise user queries across different organizational contexts."
+          },
+          "response": [
+            {
+              "name": "Success Response - Filtered Users",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/users?page=1&limit=20&systemEditionId={{system_edition_id}}&companyId={{company_id}}&roleName=user&isActive=true"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Users retrieved successfully",
+                "data": [
+                  {
+                    "id": "uuid",
+                    "email": "user@example.com",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "activeRole": {
+                      "id": "user-role-uuid",
+                      "roleName": "user",
+                      "systemEditionId": "{{system_edition_id}}",
+                      "companyId": "{{company_id}}",
+                      "channelId": null,
+                      "expiresAt": null
+                    },
+                    "availableRoles": [
+                      {
+                        "id": "user-role-uuid",
+                        "roleName": "user",
+                        "systemEditionId": "{{system_edition_id}}",
+                        "companyId": "{{company_id}}",
+                        "channelId": null,
+                        "expiresAt": null,
+                        "isActive": true
+                      }
+                    ],
+                    "isActive": true,
+                    "emailVerified": true,
+                    "phoneNumber": "+1234567890",
+                    "companyAssociations": ["{{company_id}}"],
+                    "createdAt": "2024-01-01T00:00:00.000Z",
+                    "updatedAt": "2024-01-01T00:00:00.000Z"
+                  }
+                ],
+                "pagination": {
+                  "page": 1,
+                  "limit": 20,
+                  "total": 1,
+                  "totalPages": 1,
+                  "hasNextPage": false,
+                  "hasPrevPage": false
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Users by Channel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users?page=1&limit=10&channelId={{channel_id}}&roleName=channel_admin",
+              "host": ["{{base_url}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "channelId",
+                  "value": "{{channel_id}}",
+                  "description": "Filter by channel ID"
+                },
+                {
+                  "key": "roleName",
+                  "value": "channel_admin",
+                  "description": "Filter by role name"
+                }
+              ]
+            },
+            "description": "Example of filtering users by channel ID. This is useful for:\n- Channel admins to see users in their channel\n- Super admins to analyze channel-specific user distribution\n- System administrators to manage channel-level access\n\nNote: channel_id variable should be set in your Postman environment."
+          },
+          "response": [
+            {
+              "name": "Success Response - Channel Users",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/users?page=1&limit=10&channelId={{channel_id}}&roleName=channel_admin"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Users retrieved successfully",
+                "data": [
+                  {
+                    "id": "uuid",
+                    "email": "channeladmin@example.com",
+                    "firstName": "Channel",
+                    "lastName": "Admin",
+                    "activeRole": {
+                      "id": "user-role-uuid",
+                      "roleName": "channel_admin",
+                      "systemEditionId": "{{system_edition_id}}",
+                      "companyId": "{{company_id}}",
+                      "channelId": "{{channel_id}}",
+                      "expiresAt": null
+                    },
+                    "availableRoles": [
+                      {
+                        "id": "user-role-uuid",
+                        "roleName": "channel_admin",
+                        "systemEditionId": "{{system_edition_id}}",
+                        "companyId": "{{company_id}}",
+                        "channelId": "{{channel_id}}",
+                        "expiresAt": null,
+                        "isActive": true
+                      }
+                    ],
+                    "isActive": true,
+                    "emailVerified": true,
+                    "phoneNumber": "+1234567890",
+                    "companyAssociations": ["{{company_id}}"],
+                    "createdAt": "2024-01-01T00:00:00.000Z",
+                    "updatedAt": "2024-01-01T00:00:00.000Z"
+                  }
+                ],
+                "pagination": {
+                  "page": 1,
+                  "limit": 10,
+                  "total": 1,
+                  "totalPages": 1,
+                  "hasNextPage": false,
+                  "hasPrevPage": false
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
             }
           ]
         }
@@ -959,12 +1341,29 @@
                     "email": "user@example.com",
                     "firstName": "John",
                     "lastName": "Doe",
-                    "role": "user",
+                    "activeRole": {
+                      "id": "user-role-uuid",
+                      "roleName": "user",
+                      "systemEditionId": "uuid",
+                      "companyId": "uuid",
+                      "channelId": null,
+                      "expiresAt": null
+                    },
+                    "availableRoles": [
+                      {
+                        "id": "user-role-uuid",
+                        "roleName": "user",
+                        "systemEditionId": "uuid",
+                        "companyId": "uuid",
+                        "channelId": null,
+                        "expiresAt": null,
+                        "isActive": true
+                      }
+                    ],
                     "isActive": true,
                     "emailVerified": true,
                     "phoneNumber": "+1234567890",
-                    "systemEditionId": "uuid",
-                    "companyId": "uuid",
+                    "companyAssociations": ["uuid"],
                     "createdAt": "2024-01-01T00:00:00.000Z",
                     "updatedAt": "2024-01-01T00:00:00.000Z"
                   }
@@ -1033,14 +1432,32 @@
                     "email": "emulated@example.com",
                     "firstName": "Emulated",
                     "lastName": "User",
-                    "role": "user",
+                    "activeRole": {
+                      "id": "user-role-uuid",
+                      "roleName": "user",
+                      "systemEditionId": "uuid",
+                      "companyId": "uuid",
+                      "channelId": null,
+                      "expiresAt": null
+                    },
+                    "availableRoles": [
+                      {
+                        "id": "user-role-uuid",
+                        "roleName": "user",
+                        "systemEditionId": "uuid",
+                        "companyId": "uuid",
+                        "channelId": null,
+                        "expiresAt": null,
+                        "isActive": true
+                      }
+                    ],
                     "isActive": true,
                     "emailVerified": true,
+                    "companyAssociations": ["uuid"],
                     "isEmulating": true,
                     "originalUser": {
                       "id": "uuid",
                       "email": "admin@example.com",
-                      "role": "super_admin",
                       "firstName": "Admin",
                       "lastName": "User"
                     }
@@ -1104,12 +1521,383 @@
                     "email": "admin@example.com",
                     "firstName": "Admin",
                     "lastName": "User",
-                    "role": "super_admin",
+                    "activeRole": {
+                      "id": "user-role-uuid",
+                      "roleName": "super_admin",
+                      "systemEditionId": "uuid",
+                      "companyId": "uuid",
+                      "channelId": null,
+                      "expiresAt": null
+                    },
+                    "availableRoles": [
+                      {
+                        "id": "user-role-uuid",
+                        "roleName": "super_admin",
+                        "systemEditionId": "uuid",
+                        "companyId": "uuid",
+                        "channelId": null,
+                        "expiresAt": null,
+                        "isActive": true
+                      }
+                    ],
                     "isActive": true,
                     "emailVerified": true,
+                    "companyAssociations": ["uuid"],
                     "isEmulating": false
                   },
                   "token": "jwt_token_for_original_user"
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User Role Management",
+      "description": "Role management endpoints for users with multiple roles",
+      "item": [
+        {
+          "name": "Get Available Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user-roles/available",
+              "host": ["{{base_url}}"],
+              "path": ["user-roles", "available"]
+            },
+            "description": "Get all available roles for the current user"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/user-roles/available"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Available roles retrieved successfully",
+                "data": [
+                  {
+                    "id": "user-role-uuid-1",
+                    "roleName": "company_admin",
+                    "systemEditionId": "uuid",
+                    "companyId": "uuid",
+                    "channelId": null,
+                    "expiresAt": null,
+                    "isActive": true
+                  },
+                  {
+                    "id": "user-role-uuid-2",
+                    "roleName": "user",
+                    "systemEditionId": "uuid",
+                    "companyId": "uuid",
+                    "channelId": null,
+                    "expiresAt": null,
+                    "isActive": true
+                  }
+                ],
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Active Role",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user-roles/active",
+              "host": ["{{base_url}}"],
+              "path": ["user-roles", "active"]
+            },
+            "description": "Get the currently active role for the user"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/user-roles/active"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Active role retrieved successfully",
+                "data": {
+                  "id": "user-role-uuid",
+                  "roleName": "company_admin",
+                  "systemEditionId": "uuid",
+                  "companyId": "uuid",
+                  "channelId": null,
+                  "expiresAt": null
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Set Active Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userRoleId\": \"user-role-uuid\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/user-roles/active",
+              "host": ["{{base_url}}"],
+              "path": ["user-roles", "active"]
+            },
+            "description": "Set the active role for the current user"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/user-roles/active"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Active role set successfully",
+                "data": {
+                  "id": "user-role-uuid",
+                  "roleName": "user",
+                  "systemEditionId": "uuid",
+                  "companyId": "uuid",
+                  "channelId": null,
+                  "expiresAt": null
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Clear Active Role",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user-roles/active",
+              "host": ["{{base_url}}"],
+              "path": ["user-roles", "active"]
+            },
+            "description": "Clear the currently active role for the user"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{base_url}}/user-roles/active"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Active role cleared successfully",
+                "data": null,
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Switch Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userRoleId\": \"user-role-uuid\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/user-roles/switch",
+              "host": ["{{base_url}}"],
+              "path": ["user-roles", "switch"]
+            },
+            "description": "Quick role switching with validation"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/user-roles/switch"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Role switched successfully",
+                "data": {
+                  "id": "user-role-uuid",
+                  "roleName": "company_admin",
+                  "systemEditionId": "uuid",
+                  "companyId": "uuid",
+                  "channelId": null,
+                  "expiresAt": null
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validate Active Role",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user-roles/validate",
+              "host": ["{{base_url}}"],
+              "path": ["user-roles", "validate"]
+            },
+            "description": "Validate the current active role"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/user-roles/validate"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Active role is valid",
+                "data": {
+                  "isValid": true,
+                  "activeRole": {
+                    "id": "user-role-uuid",
+                    "roleName": "company_admin",
+                    "systemEditionId": "uuid",
+                    "companyId": "uuid",
+                    "channelId": null,
+                    "expiresAt": null
+                  }
                 },
                 "timestamp": "2024-01-01T00:00:00.000Z"
               }

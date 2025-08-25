@@ -1,5 +1,5 @@
 import { Op, WhereOptions } from 'sequelize';
-import { DelegateAccess, User } from '../../../models/index.js';
+import { DelegateAccess, User, UserRole, Role } from '../../../models/index.js';
 
 export interface PaginationFilters {
   page: number;
@@ -12,6 +12,8 @@ export interface InviteDelegateData {
   firstName: string;
   lastName: string;
   systemEditionId: string;
+  companyId?: string;
+  delegatorId?: string;
   permissions?: string[];
   expirationDate?: Date;
 }
@@ -126,21 +128,49 @@ export class DelegateAccessService {
         email: inviteData.email,
         firstName: inviteData.firstName,
         lastName: inviteData.lastName,
-        role: 'delegate',
-        systemEditionId: inviteData.systemEditionId,
         password: 'temp-password', // TODO: Generate secure password
         isActive: true,
         emailVerified: false,
         // Add other required fields with defaults
       });
+
+      // Create delegate role for the user
+      const delegateRole = await Role.findOne({ where: { name: 'delegate' } });
+      if (!delegateRole) {
+        throw new Error('Delegate role not found');
+      }
+
+      const userRoleData: any = {
+        userId: user.id,
+        roleId: delegateRole.id,
+        systemEditionId: inviteData.systemEditionId,
+        isActive: true,
+      };
+
+      if (inviteData.companyId) {
+        userRoleData.companyId = inviteData.companyId;
+      }
+
+      if (inviteData.delegatorId) {
+        userRoleData.grantedBy = inviteData.delegatorId;
+      }
+
+      await UserRole.create(userRoleData);
+
+      // Set the delegate role as active
+      const userRole = await UserRole.findOne({
+        where: { userId: user.id, roleId: delegateRole.id },
+      });
+      if (userRole) {
+        await user.setActiveRole(userRole.id);
+      }
     }
 
     // Create delegate access record
     const delegateAccess = await DelegateAccess.create({
       systemEditionId: inviteData.systemEditionId,
       delegateId: user.id,
-      // TODO: Set delegatorId from current user context
-      delegatorId: 'temp-user-id',
+      delegatorId: inviteData.delegatorId || user.id,
       permissions: inviteData.permissions || [],
       ...(inviteData.expirationDate && { expirationDate: inviteData.expirationDate }),
       isActive: true,
