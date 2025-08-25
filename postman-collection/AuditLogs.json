@@ -1,0 +1,222 @@
+{
+  "info": {
+    "name": "Audit Logs",
+    "description": "API endpoints for managing audit logs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get Audit Logs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/audit-logs?page=1&limit=10&systemEditionId={{systemEditionId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "audit-logs"],
+          "query": [
+            {
+              "key": "systemEditionId",
+              "value": "{{systemEditionId}}",
+              "description": "Required. Filter by system edition ID. Super admins must provide this. Other roles will use their assigned edition."
+            },
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Page number (default: 1)"
+            },
+            {
+              "key": "limit",
+              "value": "10",
+              "description": "Items per page (default: 10)"
+            },
+            {
+              "key": "search",
+              "value": "",
+              "description": "Search term for action or description",
+              "disabled": true
+            },
+            {
+              "key": "module",
+              "value": "",
+              "description": "Filter by module (documents, notes, certifications, users, settings, system, authentication, permissions)",
+              "disabled": true
+            },
+            {
+              "key": "dateFrom",
+              "value": "",
+              "description": "Start date (YYYY-MM-DD)",
+              "disabled": true
+            },
+            {
+              "key": "dateTo",
+              "value": "",
+              "description": "End date (YYYY-MM-DD)",
+              "disabled": true
+            },
+            {
+              "key": "companyId",
+              "value": "",
+              "description": "Filter by company ID (for super_admin and edition_admin only)",
+              "disabled": true
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Filter by user ID (for super_admin, edition_admin, and company_admin only)",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Get audit logs with filtering and pagination. Access is scoped by user role:\n- Super Admin: Must provide systemEditionId, can see all logs within that edition\n- Edition Admin: Uses assigned edition, can see all logs within their edition\n- Company Admin: Uses assigned edition, can only see logs from their company\n- User: Uses assigned edition, can only see their own logs"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/audit-logs?page=1&limit=10&systemEditionId={{systemEditionId}}"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Audit logs retrieved successfully",
+            "data": [
+              {
+                "id": "uuid",
+                "systemEditionId": "uuid",
+                "companyId": "uuid",
+                "userId": "uuid",
+                "action": "create_user",
+                "module": "users",
+                "description": "Created new user john.doe@example.com",
+                "ipAddress": "127.0.0.1",
+                "userAgent": "Mozilla/5.0...",
+                "metadata": {},
+                "createdAt": "2024-01-01T00:00:00.000Z",
+                "user": {
+                  "id": "uuid",
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "email": "john.doe@example.com"
+                }
+              }
+            ],
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 100,
+              "totalPages": 10,
+              "hasNextPage": true,
+              "hasPrevPage": false
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Export Audit Logs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/audit-logs/export?systemEditionId={{systemEditionId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "audit-logs", "export"],
+          "query": [
+            {
+              "key": "systemEditionId",
+              "value": "{{systemEditionId}}",
+              "description": "Required. Filter by system edition ID. Super admins must provide this. Other roles will use their assigned edition."
+            },
+            {
+              "key": "search",
+              "value": "",
+              "description": "Search term for action or description",
+              "disabled": true
+            },
+            {
+              "key": "module",
+              "value": "",
+              "description": "Filter by module (documents, notes, certifications, users, settings, system, authentication, permissions)",
+              "disabled": true
+            },
+            {
+              "key": "dateFrom",
+              "value": "",
+              "description": "Start date (YYYY-MM-DD)",
+              "disabled": true
+            },
+            {
+              "key": "dateTo",
+              "value": "",
+              "description": "End date (YYYY-MM-DD)",
+              "disabled": true
+            },
+            {
+              "key": "companyId",
+              "value": "",
+              "description": "Filter by company ID (for super_admin and edition_admin only)",
+              "disabled": true
+            },
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Filter by user ID (for super_admin, edition_admin, and company_admin only)",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Export audit logs as CSV file. Access is scoped by user role:\n- Super Admin: Must provide systemEditionId, can export all logs within that edition\n- Edition Admin: Uses assigned edition, can export all logs within their edition\n- Company Admin: Uses assigned edition, can only export logs from their company\n- User: Uses assigned edition, can only export their own logs\n\nReturns a CSV file with headers: ID, Action, Module, Description, User, User Email, IP Address, User Agent, Created At, Metadata"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/audit-logs/export?systemEditionId={{systemEditionId}}"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "text",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "text/csv"
+            },
+            {
+              "key": "Content-Disposition",
+              "value": "attachment; filename=\"audit-logs-2024-01-01.csv\""
+            }
+          ],
+          "body": "ID,Action,Module,Description,User,User Email,IP Address,User Agent,Created At,Metadata\n\"uuid\",\"create_user\",\"users\",\"Created new user john.doe@example.com\",\"John Doe\",\"john.doe@example.com\",\"127.0.0.1\",\"Mozilla/5.0...\",\"2024-01-01T00:00:00.000Z\",\"{}\""
+        }
+      ]
+    }
+  ]
+} 

@@ -1,0 +1,1122 @@
+{
+  "info": {
+    "name": "Users",
+    "description": "Complete API collection for User management. Includes endpoints for authentication, user profile management, and user administration with context-based access control for different roles (super admin, edition admin, company admin, and users).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    },
+    {
+      "key": "system_edition_id",
+      "value": "your_system_edition_id_here",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "your_user_id_here",
+      "type": "string"
+    },
+    {
+      "key": "company_id",
+      "value": "your_company_id_here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "Public authentication endpoints (no authentication required)",
+      "item": [
+        {
+          "name": "User Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Password123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users/login",
+              "host": ["{{base_url}}"],
+              "path": ["users", "login"]
+            },
+            "description": "Authenticate user and receive JWT token"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/users/login"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Login successful",
+                "data": {
+                  "user": {
+                    "id": "uuid",
+                    "email": "admin@example.com",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "role": "super_admin",
+                    "isActive": true,
+                    "emailVerified": true,
+                    "systemEditionId": "uuid",
+                    "companyId": "uuid",
+                    "createdAt": "2024-01-01T00:00:00.000Z",
+                    "updatedAt": "2024-01-01T00:00:00.000Z"
+                  },
+                  "token": "jwt_token_here"
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "User Registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"phoneNumber\": \"+1234567890\",\n  \"role\": \"user\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users/register",
+              "host": ["{{base_url}}"],
+              "path": ["users", "register"]
+            },
+            "description": "Register a new user account"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/users/register"
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "User registered successfully",
+                "data": {
+                  "id": "uuid",
+                  "email": "newuser@example.com",
+                  "firstName": "Jane",
+                  "lastName": "Smith",
+                  "role": "user",
+                  "isActive": true,
+                  "emailVerified": false,
+                  "phoneNumber": "+1234567890",
+                  "createdAt": "2024-01-01T00:00:00.000Z",
+                  "updatedAt": "2024-01-01T00:00:00.000Z"
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User Profile",
+      "description": "User profile management endpoints (accessible to all authenticated users)",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["users", "profile"]
+            },
+            "description": "Get current user's profile information"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/users/profile"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "User profile retrieved successfully",
+                "data": {
+                  "id": "uuid",
+                  "email": "user@example.com",
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "role": "user",
+                  "isActive": true,
+                  "emailVerified": true,
+                  "phoneNumber": "+1234567890",
+                  "systemEditionId": "uuid",
+                  "companyId": "uuid",
+                  "createdAt": "2024-01-01T00:00:00.000Z",
+                  "updatedAt": "2024-01-01T00:00:00.000Z"
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Updated First Name\",\n  \"lastName\": \"Updated Last Name\",\n  \"phoneNumber\": \"+1987654321\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["users", "profile"]
+            },
+            "description": "Update current user's profile information"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{base_url}}/users/profile"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "User profile updated successfully",
+                "data": {
+                  "id": "uuid",
+                  "email": "user@example.com",
+                  "firstName": "Updated First Name",
+                  "lastName": "Updated Last Name",
+                  "role": "user",
+                  "isActive": true,
+                  "emailVerified": true,
+                  "phoneNumber": "+1987654321",
+                  "systemEditionId": "uuid",
+                  "companyId": "uuid",
+                  "createdAt": "2024-01-01T00:00:00.000Z",
+                  "updatedAt": "2024-01-01T00:00:00.000Z"
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "description": "User administration endpoints (accessible to super admin, edition admin, and company admin)",
+      "item": [
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"phoneNumber\": \"+1234567890\",\n  \"role\": \"user\",\n  \"isActive\": true,\n  \"emailVerified\": false,\n  \"seatAssigned\": false,\n  \"licenseType\": \"none\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            },
+            "description": "Create a new user. Access is scoped by user role:\n- Super Admin: Can create any role except super_admin (for other super admins)\n- Edition Admin: Can create edition_admin, company_admin, user, delegate\n- Company Admin: Can create user, delegate only\n\nContext is automatically resolved based on the authenticated user's role and scope."
+          },
+          "response": [
+            {
+              "name": "Success Response - User Created",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/users"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"role\": \"user\"\n}"
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "User created successfully",
+                "data": {
+                  "id": "uuid",
+                  "email": "newuser@example.com",
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "role": "user",
+                  "isActive": true,
+                  "emailVerified": false,
+                  "phoneNumber": "+1234567890",
+                  "systemEditionId": "uuid",
+                  "companyId": "uuid",
+                  "seatAssigned": false,
+                  "licenseType": "none",
+                  "createdAt": "2024-01-01T00:00:00.000Z",
+                  "updatedAt": "2024-01-01T00:00:00.000Z"
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            },
+            {
+              "name": "Error Response - Invalid Role",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/users"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"admin@example.com\",\n  \"firstName\": \"Admin\",\n  \"lastName\": \"User\",\n  \"role\": \"super_admin\"\n}"
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": false,
+                "message": "Edition admins cannot create super admins",
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            },
+            {
+              "name": "Error Response - Email Already Exists",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/users"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"existing@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"role\": \"user\"\n}"
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": false,
+                "message": "User already exists with this email",
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Company Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"companyadmin@example.com\",\n  \"firstName\": \"Company\",\n  \"lastName\": \"Admin\",\n  \"phoneNumber\": \"+1234567890\",\n  \"role\": \"company_admin\",\n  \"isActive\": true,\n  \"emailVerified\": true,\n  \"expirationDate\": \"2025-12-31T23:59:59.000Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            },
+            "description": "Create a company admin user. Only super_admin and edition_admin can create company_admin users."
+          },
+          "response": [
+            {
+              "name": "Success Response - Company Admin Created",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/users"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"companyadmin@example.com\",\n  \"firstName\": \"Company\",\n  \"lastName\": \"Admin\",\n  \"role\": \"company_admin\"\n}"
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "User created successfully",
+                "data": {
+                  "id": "uuid",
+                  "email": "companyadmin@example.com",
+                  "firstName": "Company",
+                  "lastName": "Admin",
+                  "role": "company_admin",
+                  "isActive": true,
+                  "emailVerified": true,
+                  "phoneNumber": "+1234567890",
+                  "systemEditionId": "uuid",
+                  "companyId": "uuid",
+                  "expirationDate": "2025-12-31T23:59:59.000Z",
+                  "createdAt": "2024-01-01T00:00:00.000Z",
+                  "updatedAt": "2024-01-01T00:00:00.000Z"
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create User with Seat Assignment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"seatuser@example.com\",\n  \"firstName\": \"Seat\",\n  \"lastName\": \"User\",\n  \"phoneNumber\": \"+1234567890\",\n  \"role\": \"user\",\n  \"isActive\": true,\n  \"emailVerified\": false,\n  \"seatAssigned\": true,\n  \"licenseType\": \"organizational_seat\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users",
+              "host": ["{{base_url}}"],
+              "path": ["users"]
+            },
+            "description": "Create a user with seat assignment. This will increment the company's used seats count."
+          },
+          "response": [
+            {
+              "name": "Success Response - User with Seat Created",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/users"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"seatuser@example.com\",\n  \"firstName\": \"Seat\",\n  \"lastName\": \"User\",\n  \"seatAssigned\": true,\n  \"licenseType\": \"organizational_seat\"\n}"
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "User created successfully",
+                "data": {
+                  "id": "uuid",
+                  "email": "seatuser@example.com",
+                  "firstName": "Seat",
+                  "lastName": "User",
+                  "role": "user",
+                  "isActive": true,
+                  "emailVerified": false,
+                  "phoneNumber": "+1234567890",
+                  "systemEditionId": "uuid",
+                  "companyId": "uuid",
+                  "seatAssigned": true,
+                  "licenseType": "organizational_seat",
+                  "createdAt": "2024-01-01T00:00:00.000Z",
+                  "updatedAt": "2024-01-01T00:00:00.000Z"
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users?page=1&limit=10&search=&role=&isActive=&emailVerified=",
+              "host": ["{{base_url}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page (default: 10)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search term for firstName, lastName, or email",
+                  "disabled": true
+                },
+                {
+                  "key": "role",
+                  "value": "",
+                  "description": "Filter by user role (super_admin, edition_admin, company_admin, user, delegate)",
+                  "disabled": true
+                },
+                {
+                  "key": "isActive",
+                  "value": "",
+                  "description": "Filter by active status (true/false)",
+                  "disabled": true
+                },
+                {
+                  "key": "emailVerified",
+                  "value": "",
+                  "description": "Filter by email verification status (true/false)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get all users with filtering and pagination. Access is scoped by user role:\n- Super Admin: Can see all users across all editions\n- Edition Admin: Can only see users within their assigned edition\n- Company Admin: Can only see users within their assigned company"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/users?page=1&limit=10"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Users retrieved successfully",
+                "data": [
+                  {
+                    "id": "uuid",
+                    "email": "user1@example.com",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "role": "user",
+                    "isActive": true,
+                    "emailVerified": true,
+                    "phoneNumber": "+1234567890",
+                    "systemEditionId": "uuid",
+                    "companyId": "uuid",
+                    "createdAt": "2024-01-01T00:00:00.000Z",
+                    "updatedAt": "2024-01-01T00:00:00.000Z"
+                  }
+                ],
+                "pagination": {
+                  "page": 1,
+                  "limit": 10,
+                  "total": 1,
+                  "totalPages": 1,
+                  "hasNextPage": false,
+                  "hasPrevPage": false
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            },
+            "description": "Get a specific user by ID. Access is scoped by user role and context."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/users/{{user_id}}"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "User retrieved successfully",
+                "data": {
+                  "id": "uuid",
+                  "email": "user@example.com",
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "role": "user",
+                  "isActive": true,
+                  "emailVerified": true,
+                  "phoneNumber": "+1234567890",
+                  "systemEditionId": "uuid",
+                  "companyId": "uuid",
+                  "createdAt": "2024-01-01T00:00:00.000Z",
+                  "updatedAt": "2024-01-01T00:00:00.000Z"
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Updated First Name\",\n  \"lastName\": \"Updated Last Name\",\n  \"email\": \"updated@example.com\",\n  \"phoneNumber\": \"+1987654321\",\n  \"role\": \"company_admin\",\n  \"isActive\": true,\n  \"emailVerified\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            },
+            "description": "Update a specific user by ID. Access is scoped by user role and context."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{base_url}}/users/{{user_id}}"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "User updated successfully",
+                "data": {
+                  "id": "uuid",
+                  "email": "updated@example.com",
+                  "firstName": "Updated First Name",
+                  "lastName": "Updated Last Name",
+                  "role": "company_admin",
+                  "isActive": true,
+                  "emailVerified": true,
+                  "phoneNumber": "+1987654321",
+                  "systemEditionId": "uuid",
+                  "companyId": "uuid",
+                  "createdAt": "2024-01-01T00:00:00.000Z",
+                  "updatedAt": "2024-01-01T00:00:00.000Z"
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            },
+            "description": "Delete a specific user by ID. Access is scoped by user role and context. Only super admin and edition admin can delete users."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{base_url}}/users/{{user_id}}"
+                }
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "System Edition Users",
+      "description": "System edition specific user management (accessible to super admin and edition admin)",
+      "item": [
+        {
+          "name": "Get Users by System Edition",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/system-edition/{{system_edition_id}}?page=1&limit=10&search=&role=&isActive=&emailVerified=",
+              "host": ["{{base_url}}"],
+              "path": ["users", "system-edition", "{{system_edition_id}}"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page (default: 10)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search term for firstName, lastName, or email",
+                  "disabled": true
+                },
+                {
+                  "key": "role",
+                  "value": "",
+                  "description": "Filter by user role (defaults to 'user')",
+                  "disabled": true
+                },
+                {
+                  "key": "isActive",
+                  "value": "",
+                  "description": "Filter by active status (true/false)",
+                  "disabled": true
+                },
+                {
+                  "key": "emailVerified",
+                  "value": "",
+                  "description": "Filter by email verification status (true/false)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get users for a specific system edition with filtering and pagination. Access is scoped by user role:\n- Super Admin: Can access any system edition\n- Edition Admin: Can only access their assigned edition"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{base_url}}/users/system-edition/{{system_edition_id}}?page=1&limit=10"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Users retrieved successfully",
+                "data": [
+                  {
+                    "id": "uuid",
+                    "email": "user@example.com",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "role": "user",
+                    "isActive": true,
+                    "emailVerified": true,
+                    "phoneNumber": "+1234567890",
+                    "systemEditionId": "uuid",
+                    "companyId": "uuid",
+                    "createdAt": "2024-01-01T00:00:00.000Z",
+                    "updatedAt": "2024-01-01T00:00:00.000Z"
+                  }
+                ],
+                "pagination": {
+                  "page": 1,
+                  "limit": 10,
+                  "total": 1,
+                  "totalPages": 1,
+                  "hasNextPage": false,
+                  "hasPrevPage": false
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Emulation",
+      "description": "User emulation endpoints (super admin only)",
+      "item": [
+        {
+          "name": "Start User Emulation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/emulate/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "emulate", "{{user_id}}"]
+            },
+            "description": "Start emulating a specific user (Super Admin only). This allows a super admin to act on behalf of another user."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/users/emulate/{{user_id}}"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Emulation started successfully",
+                "data": {
+                  "user": {
+                    "id": "uuid",
+                    "email": "emulated@example.com",
+                    "firstName": "Emulated",
+                    "lastName": "User",
+                    "role": "user",
+                    "isActive": true,
+                    "emailVerified": true,
+                    "isEmulating": true,
+                    "originalUser": {
+                      "id": "uuid",
+                      "email": "admin@example.com",
+                      "role": "super_admin",
+                      "firstName": "Admin",
+                      "lastName": "User"
+                    }
+                  },
+                  "token": "new_jwt_token_for_emulated_user",
+                  "originalUser": {
+                    "id": "uuid",
+                    "email": "admin@example.com",
+                    "role": "super_admin",
+                    "firstName": "Admin",
+                    "lastName": "User"
+                  }
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "End User Emulation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/end-emulation",
+              "host": ["{{base_url}}"],
+              "path": ["users", "end-emulation"]
+            },
+            "description": "End current user emulation and return to original user (Super Admin only)"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{base_url}}/users/end-emulation"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Emulation ended successfully",
+                "data": {
+                  "user": {
+                    "id": "uuid",
+                    "email": "admin@example.com",
+                    "firstName": "Admin",
+                    "lastName": "User",
+                    "role": "super_admin",
+                    "isActive": true,
+                    "emailVerified": true,
+                    "isEmulating": false
+                  },
+                  "token": "jwt_token_for_original_user"
+                },
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+} 

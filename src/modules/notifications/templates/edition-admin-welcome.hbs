@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .content {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 5px;
+    }
+    .button {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    .credentials {
+      background: #e9ecef;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 20px 0;
+      font-family: monospace;
+    }
+    .warning {
+      color: #856404;
+      background-color: #fff3cd;
+      border: 1px solid #ffeeba;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 20px 0;
+    }
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Welcome to the Scanid365!</h1>
+  </div>
+  
+  <div class="content">
+    <p>Hello {{firstName}},</p>
+    
+    <p>You have been appointed as an Edition Administrator for {{editionName}}. Your account has been created with the following credentials:</p>
+    
+    <div class="credentials">
+      <p><strong>Email:</strong> {{email}}</p>
+      <p><strong>Temporary Password:</strong> {{tempPassword}}</p>
+    </div>
+    
+    <div class="warning">
+      <p><strong>Important:</strong> Please change your password immediately after your first login for security reasons.</p>
+    </div>
+    
+    <p>You can access your Edition Admin dashboard here:</p>
+    
+    <p style="text-align: center;">
+      <a href="{{loginUrl}}" class="button">Login to Dashboard</a>
+    </p>
+    
+    <p>As an Edition Administrator, you have access to:</p>
+    <ul>
+      <li>Edition configuration and settings</li>
+      <li>User management within your edition</li>
+      <li>Company management</li>
+      <li>Analytics and reporting</li>
+    </ul>
+    
+    {{#if expirationDate}}
+    <div class="warning">
+      <p><strong>Note:</strong> Your admin access will expire on {{expirationDate}}.</p>
+    </div>
+    {{/if}}
+    
+    <p>If you have any questions or need assistance, please contact the system administrator.</p>
+    
+    <p>Best regards,<br>Scanid365 Team</p>
+  </div>
+  
+  <div class="footer">
+    <p>This email was sent automatically. Please do not reply to this email.</p>
+    <p>For security reasons, please change your password immediately after logging in.</p>
+  </div>
+</body>
+</html> 

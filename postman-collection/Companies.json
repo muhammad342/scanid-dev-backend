@@ -1,0 +1,781 @@
+{
+  "info": {
+    "name": "Companies",
+    "description": "API endpoints for managing company resources",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Companies",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/companies?page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "companies"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Page number (default: 1)"
+            },
+            {
+              "key": "limit",
+              "value": "10",
+              "description": "Items per page (default: 10)"
+            },
+            {
+              "key": "search",
+              "value": "",
+              "description": "Search term for company name",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Get all companies with filtering and pagination. Access is scoped by user role:\n- Super Admin: Can see all companies\n- Edition Admin: Can see companies in their edition\n- Company Admin: Can see their company only"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies?page=1&limit=10"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Companies retrieved successfully",
+            "data": [
+              {
+                "id": "uuid",
+                "name": "Company Name",
+                "systemEditionId": "uuid",
+                "companyAdminId": "uuid",
+                "totalSeats": 100,
+                "usedSeats": 50,
+                "availableSeats": 50,
+                "status": "active",
+                "type": "Enterprise",
+                "title": "Company Description",
+                "channelPartnerSplit": false,
+                "commission": 0,
+                "paymentMethod": "credit_card",
+                "createdAt": "2024-01-01T00:00:00.000Z",
+                "updatedAt": "2024-01-01T00:00:00.000Z",
+                "companyAdmin": {
+                  "id": "uuid",
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "email": "john.doe@company.com"
+                },
+                "systemEdition": {
+                  "id": "uuid",
+                  "name": "Enterprise Edition"
+                }
+              }
+            ],
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 100,
+              "totalPages": 10,
+              "hasNextPage": true,
+              "hasPrevPage": false
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get My Company",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/companies/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "companies", "me"]
+        },
+        "description": "Get the logged-in user's company details. This endpoint automatically identifies the user's company based on their authentication token and returns comprehensive company information including admin details and system edition information.\n\nAccess Control:\n- Super Admin: Can access any company (if they have a companyId)\n- Edition Admin: Can access their company (if they have a companyId)\n- Company Admin: Can access their company\n- User: Can access their company\n\nReturns company details with associated company admin and system edition information."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies/me"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Company details retrieved successfully",
+            "data": {
+              "id": "uuid",
+              "name": "My Company Name",
+              "systemEditionId": "uuid",
+              "companyAdminId": "uuid",
+              "totalSeats": 100,
+              "usedSeats": 50,
+              "availableSeats": 50,
+              "status": "active",
+              "type": "Enterprise",
+              "title": "My Company Description",
+              "channelPartnerSplit": false,
+              "commission": 0,
+              "paymentMethod": "credit_card",
+              "encryptedMasterPin": null,
+              "pinOptions": {
+                "documents": false,
+                "notes": false,
+                "certificates": false
+              },
+              "pinSettings": {
+                "requireToView": false,
+                "requireToEdit": false
+              },
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z",
+              "companyAdmin": {
+                "id": "uuid",
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john.doe@company.com"
+              },
+              "systemEdition": {
+                "id": "uuid",
+                "name": "Enterprise Edition"
+              }
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "No Company Found",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies/me"
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "No company found for the logged-in user",
+            "error": "Not Found",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Unauthorized",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies/me"
+            }
+          },
+          "status": "Unauthorized",
+          "code": 401,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Authentication required",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Company by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "companies", "{{companyId}}"]
+        },
+        "description": "Get a specific company by ID. Access is scoped by user role:\n- Super Admin: Can access any company\n- Edition Admin: Can access companies in their edition\n- Company Admin: Can access their company only"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Company retrieved successfully",
+            "data": {
+              "id": "{{companyId}}",
+              "name": "Company Name",
+              "systemEditionId": "uuid",
+              "companyAdminId": "uuid",
+              "totalSeats": 100,
+              "usedSeats": 50,
+              "availableSeats": 50,
+              "status": "active",
+              "type": "Enterprise",
+              "title": "Company Description",
+              "channelPartnerSplit": false,
+              "commission": 0,
+              "paymentMethod": "credit_card",
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z",
+              "companyAdmin": {
+                "id": "uuid",
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john.doe@company.com"
+              },
+              "systemEdition": {
+                "id": "uuid",
+                "name": "Enterprise Edition"
+              }
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Company",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"New Company Name\",\n  \"companyAdminId\": \"{{userId}}\",\n  \"totalSeats\": 100,\n  \"type\": \"Enterprise\",\n  \"title\": \"New Company Description\",\n  \"channelPartnerSplit\": false,\n  \"commission\": 0,\n  \"paymentMethod\": \"credit_card\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/companies",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "companies"]
+        },
+        "description": "Create a new company. Only Super Admin and Edition Admin can create companies."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies"
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Company created successfully",
+            "data": {
+              "id": "uuid",
+              "name": "New Company Name",
+              "systemEditionId": "uuid",
+              "companyAdminId": "{{userId}}",
+              "totalSeats": 100,
+              "usedSeats": 0,
+              "availableSeats": 100,
+              "status": "active",
+              "type": "Enterprise",
+              "title": "New Company Description",
+              "channelPartnerSplit": false,
+              "commission": 0,
+              "paymentMethod": "credit_card",
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Company",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Company Name\",\n  \"totalSeats\": 150,\n  \"type\": \"Enterprise Plus\",\n  \"title\": \"Updated Company Description\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "companies", "{{companyId}}"]
+        },
+        "description": "Update an existing company. Access is scoped by user role:\n- Super Admin: Can update any company\n- Edition Admin: Can update companies in their edition\n- Company Admin: Can update their company only"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Company updated successfully",
+            "data": {
+              "id": "{{companyId}}",
+              "name": "Updated Company Name",
+              "systemEditionId": "uuid",
+              "companyAdminId": "uuid",
+              "totalSeats": 150,
+              "usedSeats": 50,
+              "availableSeats": 100,
+              "status": "active",
+              "type": "Enterprise Plus",
+              "title": "Updated Company Description",
+              "channelPartnerSplit": false,
+              "commission": 0,
+              "paymentMethod": "credit_card",
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Company",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "companies", "{{companyId}}"]
+        },
+        "description": "Delete a company. Only Super Admin and Edition Admin can delete companies."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Company deleted successfully",
+            "data": null,
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Company Users",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}/users?page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "companies", "{{companyId}}", "users"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Page number (default: 1)"
+            },
+            {
+              "key": "limit",
+              "value": "10",
+              "description": "Items per page (default: 10)"
+            },
+            {
+              "key": "search",
+              "value": "",
+              "description": "Search term for user name or email",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Get all users for a specific company. Access is scoped by user role:\n- Super Admin: Can see users in any company\n- Edition Admin: Can see users in companies in their edition\n- Company Admin: Can see users in their company only"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}/users?page=1&limit=10"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Company users retrieved successfully",
+            "data": [
+              {
+                "id": "uuid",
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john.doe@company.com",
+                "role": "company_admin",
+                "isActive": true,
+                "emailVerified": true,
+                "phoneNumber": "+1234567890",
+                "companyId": "{{companyId}}",
+                "systemEditionId": "uuid",
+                "seatAssigned": true,
+                "licenseType": "organizational_seat",
+                "delegateCount": 0,
+                "lastLoginAt": "2024-01-01T00:00:00.000Z",
+                "createdAt": "2024-01-01T00:00:00.000Z",
+                "updatedAt": "2024-01-01T00:00:00.000Z"
+              }
+            ],
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 50,
+              "totalPages": 5,
+              "hasNextPage": true,
+              "hasPrevPage": false
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update PIN Management",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"masterPin\": \"1234\",\n  \"pinOptions\": {\n    \"documents\": true,\n    \"notes\": false,\n    \"certificates\": true\n  },\n  \"pinSettings\": {\n    \"requireToView\": true,\n    \"requireToEdit\": false\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}/pin-management",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "companies", "{{companyId}}", "pin-management"]
+        },
+        "description": "Update PIN management settings for a company. Only Super Admin, Edition Admin, and Company Admin can update PIN settings."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}/pin-management"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "PIN management settings updated successfully",
+            "data": {
+              "hasMasterPin": true,
+              "pinOptions": {
+                "documents": true,
+                "notes": false,
+                "certificates": true
+              },
+              "pinSettings": {
+                "requireToView": true,
+                "requireToEdit": false
+              }
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Validate Company PIN",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pin\": \"1234\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}/validate-pin",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "companies", "{{companyId}}", "validate-pin"]
+        },
+        "description": "Validate a company PIN. All authenticated users can validate PINs for their company."
+      },
+      "response": [
+        {
+          "name": "Valid PIN Response",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}/validate-pin"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "PIN is valid",
+            "data": {
+              "isValid": true
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Invalid PIN Response",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}/validate-pin"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "PIN is invalid",
+            "data": {
+              "isValid": false
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get PIN Configuration",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}/pin-configuration",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "companies", "{{companyId}}", "pin-configuration"]
+        },
+        "description": "Get PIN configuration for a company. All authenticated users can view PIN configuration for their company."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/companies/{{companyId}}/pin-configuration"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "PIN configuration retrieved successfully",
+            "data": {
+              "hasMasterPin": true,
+              "pinOptions": {
+                "documents": true,
+                "notes": false,
+                "certificates": true
+              },
+              "pinSettings": {
+                "requireToView": true,
+                "requireToEdit": false
+              }
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    }
+  ]
+} 

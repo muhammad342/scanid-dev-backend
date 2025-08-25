@@ -1,0 +1,659 @@
+{
+  "info": {
+    "name": "Module Template",
+    "description": "Template API endpoints for managing module resources with resolveContext pattern",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Items",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/module?page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "module"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Page number (default: 1)"
+            },
+            {
+              "key": "limit",
+              "value": "10",
+              "description": "Items per page (default: 10)"
+            },
+            {
+              "key": "search",
+              "value": "",
+              "description": "Search term for filtering items",
+              "disabled": true
+            },
+            {
+              "key": "status",
+              "value": "",
+              "description": "Filter by status",
+              "disabled": true
+            },
+            {
+              "key": "category",
+              "value": "",
+              "description": "Filter by category",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Get all items with filtering and pagination. Access is scoped by user role:\n- Super Admin: Can see all items\n- Edition Admin: Can see items in their edition\n- Company Admin: Can see items in their company\n- User: Can see items in their company\n\nContext is automatically resolved based on user role and JWT token."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/module?page=1&limit=10"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Items retrieved successfully",
+            "data": [
+              {
+                "id": "uuid",
+                "systemEditionId": "uuid",
+                "companyId": "uuid",
+                "name": "Item Name",
+                "description": "Item Description",
+                "status": "active",
+                "category": "default",
+                "createdBy": "uuid",
+                "createdAt": "2024-01-01T00:00:00.000Z",
+                "updatedAt": "2024-01-01T00:00:00.000Z"
+              }
+            ],
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 100,
+              "totalPages": 10,
+              "hasNextPage": true,
+              "hasPrevPage": false
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Error - Missing Context",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/module"
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "System edition ID is required",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Item by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/module/{{itemId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "module", "{{itemId}}"]
+        },
+        "description": "Get a specific item by ID. Access is scoped by user role and context resolution ensures users can only access items within their authorized scope."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/module/uuid"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Item retrieved successfully",
+            "data": {
+              "id": "uuid",
+              "systemEditionId": "uuid",
+              "companyId": "uuid",
+              "name": "Item Name",
+              "description": "Item Description",
+              "status": "active",
+              "category": "default",
+              "createdBy": "uuid",
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Error - Not Found",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/module/invalid-id"
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Item not found",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Item",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/module",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "module"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"New Item\",\n  \"description\": \"Item description\",\n  \"status\": \"active\",\n  \"category\": \"default\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Create a new item. The systemEditionId and companyId are automatically set based on the user's context. Only Super Admin and Edition Admin can create items."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/module"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Item\",\n  \"description\": \"Item description\",\n  \"status\": \"active\",\n  \"category\": \"default\"\n}"
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Item created successfully",
+            "data": {
+              "id": "uuid",
+              "systemEditionId": "uuid",
+              "companyId": "uuid",
+              "name": "New Item",
+              "description": "Item description",
+              "status": "active",
+              "category": "default",
+              "createdBy": "uuid",
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Error - Validation Failed",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/module"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\"\n}"
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Validation failed",
+            "error": "Name is required",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Item",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/module/{{itemId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "module", "{{itemId}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Item\",\n  \"description\": \"Updated description\",\n  \"status\": \"inactive\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Update an existing item. Only Super Admin and Edition Admin can update items. Context validation ensures users can only update items within their scope."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/module/uuid"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Item\",\n  \"description\": \"Updated description\",\n  \"status\": \"inactive\"\n}"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Item updated successfully",
+            "data": {
+              "id": "uuid",
+              "systemEditionId": "uuid",
+              "companyId": "uuid",
+              "name": "Updated Item",
+              "description": "Updated description",
+              "status": "inactive",
+              "category": "default",
+              "createdBy": "uuid",
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Item",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/module/{{itemId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "module", "{{itemId}}"]
+        },
+        "description": "Delete an item. Only Super Admin and Edition Admin can delete items. Context validation ensures users can only delete items within their scope."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/module/uuid"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Item deleted successfully",
+            "data": null,
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bulk Operations",
+      "item": [
+        {
+          "name": "Bulk Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/module/bulk",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "module", "bulk"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"name\": \"Item 1\",\n      \"description\": \"Description 1\",\n      \"status\": \"active\"\n    },\n    {\n      \"name\": \"Item 2\",\n      \"description\": \"Description 2\",\n      \"status\": \"active\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Create multiple items in a single request. Context is automatically applied to all items."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/module/bulk"
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Items created successfully",
+                "data": [
+                  {
+                    "id": "uuid-1",
+                    "systemEditionId": "uuid",
+                    "companyId": "uuid",
+                    "name": "Item 1",
+                    "description": "Description 1",
+                    "status": "active",
+                    "createdBy": "uuid",
+                    "createdAt": "2024-01-01T00:00:00.000Z"
+                  },
+                  {
+                    "id": "uuid-2",
+                    "systemEditionId": "uuid",
+                    "companyId": "uuid",
+                    "name": "Item 2",
+                    "description": "Description 2",
+                    "status": "active",
+                    "createdBy": "uuid",
+                    "createdAt": "2024-01-01T00:00:00.000Z"
+                  }
+                ],
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bulk Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/module/bulk",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "module", "bulk"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\"uuid-1\", \"uuid-2\"],\n  \"updates\": {\n    \"status\": \"inactive\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Update multiple items in a single request. Context validation ensures users can only update items within their scope."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "PUT",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/module/bulk"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Items updated successfully",
+                "data": [
+                  {
+                    "id": "uuid-1",
+                    "status": "inactive",
+                    "updatedAt": "2024-01-01T00:00:00.000Z"
+                  },
+                  {
+                    "id": "uuid-2",
+                    "status": "inactive",
+                    "updatedAt": "2024-01-01T00:00:00.000Z"
+                  }
+                ],
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bulk Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/module/bulk",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "module", "bulk"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\"uuid-1\", \"uuid-2\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Delete multiple items in a single request. Context validation ensures users can only delete items within their scope."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/module/bulk"
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "success": true,
+                "message": "Items deleted successfully",
+                "data": null,
+                "timestamp": "2024-01-01T00:00:00.000Z"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "your-jwt-token-here",
+      "type": "string"
+    },
+    {
+      "key": "itemId",
+      "value": "uuid-of-item-to-test",
+      "type": "string"
+    }
+  ]
+} 

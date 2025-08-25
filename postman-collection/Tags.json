@@ -1,0 +1,790 @@
+{
+  "info": {
+    "name": "Tags",
+    "description": "API endpoints for managing tag resources with role-based access control",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Tags",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tags?page=1&limit=10&search=&type=&isActive=",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "tags"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Page number (default: 1)"
+            },
+            {
+              "key": "limit",
+              "value": "10",
+              "description": "Items per page (default: 10)"
+            },
+            {
+              "key": "search",
+              "value": "",
+              "description": "Search term for tag name",
+              "disabled": true
+            },
+            {
+              "key": "type",
+              "value": "",
+              "description": "Filter by tag type (document, note, certificate)",
+              "disabled": true
+            },
+            {
+              "key": "isActive",
+              "value": "",
+              "description": "Filter by active status (true/false)",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Get all tags with filtering and pagination. Access is scoped by user role:\n- Super Admin: Can see all tags\n- Edition Admin: Can see tags in their edition\n- Company Admin: Can see tags in their company\n- User: Can see tags in their company"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags?page=1&limit=10"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Tags retrieved successfully",
+            "data": [
+              {
+                "id": "uuid",
+                "systemEditionId": "uuid",
+                "companyId": "uuid",
+                "name": "Tag Name",
+                "color": "#FF0000",
+                "type": "document",
+                "isActive": true,
+                "sortOrder": 1,
+                "createdAt": "2024-01-01T00:00:00.000Z",
+                "updatedAt": "2024-01-01T00:00:00.000Z"
+              }
+            ],
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 100,
+              "totalPages": 10,
+              "hasNextPage": true,
+              "hasPrevPage": false
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Tag Statistics",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tags/stats",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "tags", "stats"]
+        },
+        "description": "Get tag statistics for the user's system edition. Shows total counts and breakdowns by type and active status."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/stats"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Tag statistics retrieved successfully",
+            "data": {
+              "total": 25,
+              "byType": {
+                "document": 10,
+                "note": 8,
+                "certificate": 7
+              },
+              "active": {
+                "document": 9,
+                "note": 7,
+                "certificate": 6
+              }
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Tag by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tags/{{tagId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "tags", "{{tagId}}"]
+        },
+        "description": "Get a specific tag by its ID. The tag must belong to the user's system edition."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/uuid"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Tag retrieved successfully",
+            "data": {
+              "id": "uuid",
+              "systemEditionId": "uuid",
+              "companyId": "uuid",
+              "name": "Tag Name",
+              "color": "#FF0000",
+              "type": "document",
+              "isActive": true,
+              "sortOrder": 1,
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Not Found Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/invalid-id"
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Tag not found",
+            "error": "Not Found",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Tags by Type",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tags/type/{{tagType}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "tags", "type", "{{tagType}}"]
+        },
+        "description": "Get all tags of a specific type (document, note, or certificate) for the user's system edition."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/type/document"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Document tags retrieved successfully",
+            "data": [
+              {
+                "id": "uuid",
+                "systemEditionId": "uuid",
+                "companyId": "uuid",
+                "name": "Document Tag 1",
+                "color": "#FF0000",
+                "type": "document",
+                "isActive": true,
+                "sortOrder": 1,
+                "createdAt": "2024-01-01T00:00:00.000Z",
+                "updatedAt": "2024-01-01T00:00:00.000Z"
+              }
+            ],
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Invalid Type Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/type/invalid"
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Invalid tag type. Must be one of: document, note, certificate",
+            "error": "Bad Request",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Tag",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"New Tag Name\",\n  \"type\": \"document\",\n  \"color\": \"#FF0000\",\n  \"isActive\": true,\n  \"sortOrder\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tags",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "tags"]
+        },
+        "description": "Create a new tag. Only Super Admin and Edition Admin can create tags.\n\nRequired fields:\n- name: Tag name (1-100 characters)\n- type: Tag type (document, note, or certificate)\n\nOptional fields:\n- color: Hex color code (e.g., #FF0000)\n- isActive: Boolean status (default: true)\n- sortOrder: Integer for ordering (default: 0)"
+      },
+      "response": [
+        {
+          "name": "Created Response",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags"
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Tag created successfully",
+            "data": {
+              "id": "uuid",
+              "systemEditionId": "uuid",
+              "companyId": "uuid",
+              "name": "New Tag Name",
+              "color": "#FF0000",
+              "type": "document",
+              "isActive": true,
+              "sortOrder": 1,
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Validation Error Response",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags"
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Validation failed",
+            "error": "Bad Request",
+            "validationErrors": [
+              {
+                "field": "name",
+                "message": "Tag name must be between 1 and 100 characters",
+                "value": ""
+              },
+              {
+                "field": "type",
+                "message": "Type must be one of: document, note, certificate",
+                "value": "invalid"
+              }
+            ],
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Forbidden Response",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags"
+            }
+          },
+          "status": "Forbidden",
+          "code": 403,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Insufficient permissions",
+            "error": "Forbidden",
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Tag",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Tag Name\",\n  \"color\": \"#00FF00\",\n  \"isActive\": false,\n  \"sortOrder\": 2\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tags/{{tagId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "tags", "{{tagId}}"]
+        },
+        "description": "Update an existing tag. Only Super Admin and Edition Admin can update tags.\n\nAll fields are optional:\n- name: Tag name (1-100 characters)\n- color: Hex color code (e.g., #00FF00)\n- isActive: Boolean status\n- sortOrder: Integer for ordering"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/uuid"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Tag updated successfully",
+            "data": {
+              "id": "uuid",
+              "systemEditionId": "uuid",
+              "companyId": "uuid",
+              "name": "Updated Tag Name",
+              "color": "#00FF00",
+              "type": "document",
+              "isActive": false,
+              "sortOrder": 2,
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Tag",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tags/{{tagId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "tags", "{{tagId}}"]
+        },
+        "description": "Delete a tag by ID. Only Super Admin and Edition Admin can delete tags. This action is irreversible."
+      },
+      "response": [
+        {
+          "name": "No Content Response",
+          "originalRequest": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/uuid"
+            }
+          },
+          "status": "No Content",
+          "code": 204,
+          "_postman_previewlanguage": "json",
+          "header": []
+        }
+      ]
+    },
+    {
+      "name": "Update Tag Order",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tagUpdates\": [\n    {\n      \"id\": \"{{tagId1}}\",\n      \"sortOrder\": 1\n    },\n    {\n      \"id\": \"{{tagId2}}\",\n      \"sortOrder\": 2\n    },\n    {\n      \"id\": \"{{tagId3}}\",\n      \"sortOrder\": 3\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tags/order",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "tags", "order"]
+        },
+        "description": "Update the sort order of multiple tags at once. Only Super Admin and Edition Admin can update tag order.\n\nRequired fields:\n- tagUpdates: Array of objects with id and sortOrder\n  - id: Tag UUID\n  - sortOrder: Integer (0 or greater)"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/order"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Tag order updated successfully",
+            "data": null,
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Validation Error Response",
+          "originalRequest": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/order"
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Validation failed",
+            "error": "Bad Request",
+            "validationErrors": [
+              {
+                "field": "tagUpdates",
+                "message": "tagUpdates must be a non-empty array",
+                "value": []
+              }
+            ],
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Merge Tags",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sourceTagIds\": [\"{{sourceTagId1}}\", \"{{sourceTagId2}}\"],\n  \"newTagName\": \"Merged Tag Name\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/tags/merge",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "tags", "merge"]
+        },
+        "description": "Merge multiple tags into a single tag. Only Super Admin and Edition Admin can merge tags.\n\nRequired fields:\n- sourceTagIds: Array of tag UUIDs to merge\n\nOptional fields (choose one):\n- targetTagId: UUID of existing tag to merge into\n- newTagName: Name for new merged tag\n\nNote: All source tags must be of the same type and belong to the same system edition."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/merge"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Tags merged successfully",
+            "data": {
+              "success": true,
+              "message": "Tags merged successfully",
+              "mergedTagId": "uuid"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        },
+        {
+          "name": "Validation Error Response",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags/merge"
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": false,
+            "message": "Validation failed",
+            "error": "Bad Request",
+            "validationErrors": [
+              {
+                "field": "sourceTagIds",
+                "message": "sourceTagIds must be a non-empty array",
+                "value": []
+              }
+            ],
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "your-jwt-token-here",
+      "type": "string"
+    },
+    {
+      "key": "tagId",
+      "value": "your-tag-id-here",
+      "type": "string"
+    },
+    {
+      "key": "tagType",
+      "value": "document",
+      "type": "string",
+      "description": "Tag type: document, note, or certificate"
+    },
+    {
+      "key": "tagId1",
+      "value": "first-tag-uuid",
+      "type": "string"
+    },
+    {
+      "key": "tagId2",
+      "value": "second-tag-uuid",
+      "type": "string"
+    },
+    {
+      "key": "tagId3",
+      "value": "third-tag-uuid",
+      "type": "string"
+    },
+    {
+      "key": "sourceTagId1",
+      "value": "first-source-tag-uuid",
+      "type": "string"
+    },
+    {
+      "key": "sourceTagId2",
+      "value": "second-source-tag-uuid",
+      "type": "string"
+    }
+  ]
+} 

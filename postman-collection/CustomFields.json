@@ -1,0 +1,495 @@
+{
+  "info": {
+    "name": "Custom Fields",
+    "description": "API endpoints for managing custom fields with resolveContext pattern",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get All Custom Fields",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/custom-fields?page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "custom-fields"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Page number (default: 1)"
+            },
+            {
+              "key": "limit",
+              "value": "10",
+              "description": "Items per page (default: 10)"
+            },
+            {
+              "key": "search",
+              "value": "",
+              "description": "Search term for field name",
+              "disabled": true
+            },
+            {
+              "key": "fieldType",
+              "value": "",
+              "description": "Filter by field type (Number, Text, Date, Dropdown, Checkbox)",
+              "disabled": true
+            },
+            {
+              "key": "isActive",
+              "value": "",
+              "description": "Filter by active status (true/false)",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Get custom fields with filtering and pagination. Access is scoped by user role:\n- Super Admin: Can see all custom fields\n- Edition Admin: Can see custom fields in their edition\n- Company Admin: Can see custom fields in their company\n- User: Can see custom fields in their company"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-fields?page=1&limit=10"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Custom fields retrieved successfully",
+            "data": [
+              {
+                "id": "uuid",
+                "systemEditionId": "uuid",
+                "companyId": "uuid",
+                "fieldName": "Employee ID",
+                "fieldType": "Text",
+                "helpText": "Enter your employee identification number",
+                "isMandatory": true,
+                "useDecimals": false,
+                "dropdownOptions": null,
+                "fieldOrder": 1,
+                "isActive": true,
+                "createdBy": "uuid",
+                "createdAt": "2024-01-01T00:00:00.000Z",
+                "updatedAt": "2024-01-01T00:00:00.000Z",
+                "systemEdition": {
+                  "id": "uuid",
+                  "name": "Enterprise Edition"
+                },
+                "creator": {
+                  "id": "uuid",
+                  "firstName": "John",
+                  "lastName": "Doe",
+                  "email": "john.doe@example.com"
+                }
+              }
+            ],
+            "pagination": {
+              "page": 1,
+              "limit": 10,
+              "total": 100,
+              "totalPages": 10,
+              "hasNextPage": true,
+              "hasPrevPage": false
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Custom Field by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/custom-fields/{{customFieldId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "custom-fields", "{{customFieldId}}"]
+        },
+        "description": "Get a specific custom field by ID. Access is scoped by user role:\n- Super Admin: Can see any custom field\n- Edition Admin: Can see custom fields in their edition\n- Company Admin: Can see custom fields in their company\n- User: Can see custom fields in their company"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-fields/{{customFieldId}}"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Custom field retrieved successfully",
+            "data": {
+              "id": "uuid",
+              "systemEditionId": "uuid",
+              "companyId": "uuid",
+              "fieldName": "Employee ID",
+              "fieldType": "Text",
+              "helpText": "Enter your employee identification number",
+              "isMandatory": true,
+              "useDecimals": false,
+              "dropdownOptions": null,
+              "fieldOrder": 1,
+              "isActive": true,
+              "createdBy": "uuid",
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z",
+              "systemEdition": {
+                "id": "uuid",
+                "name": "Enterprise Edition"
+              },
+              "creator": {
+                "id": "uuid",
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "john.doe@example.com"
+              }
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Custom Field",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fieldName\": \"Employee ID\",\n  \"fieldType\": \"Text\",\n  \"helpText\": \"Enter your employee identification number\",\n  \"isMandatory\": true,\n  \"fieldOrder\": 1,\n  \"isActive\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/custom-fields",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "custom-fields"]
+        },
+        "description": "Create a new custom field. Access is restricted to Super Admin and Edition Admin only.\n\nField Types:\n- Text: Simple text input\n- Number: Numeric input (useDecimals option available)\n- Date: Date picker\n- Dropdown: Select from predefined options (dropdownOptions required)\n- Checkbox: Boolean input"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-fields"
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Custom field created successfully",
+            "data": {
+              "id": "uuid",
+              "systemEditionId": "uuid",
+              "companyId": "uuid",
+              "fieldName": "Employee ID",
+              "fieldType": "Text",
+              "helpText": "Enter your employee identification number",
+              "isMandatory": true,
+              "useDecimals": false,
+              "dropdownOptions": null,
+              "fieldOrder": 1,
+              "isActive": true,
+              "createdBy": "uuid",
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Custom Field",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fieldName\": \"Employee ID Updated\",\n  \"helpText\": \"Updated help text for employee ID\",\n  \"isMandatory\": false,\n  \"fieldOrder\": 2\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/custom-fields/{{customFieldId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "custom-fields", "{{customFieldId}}"]
+        },
+        "description": "Update an existing custom field. Access is restricted to Super Admin and Edition Admin only."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-fields/{{customFieldId}}"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Custom field updated successfully",
+            "data": {
+              "id": "uuid",
+              "systemEditionId": "uuid",
+              "companyId": "uuid",
+              "fieldName": "Employee ID Updated",
+              "fieldType": "Text",
+              "helpText": "Updated help text for employee ID",
+              "isMandatory": false,
+              "useDecimals": false,
+              "dropdownOptions": null,
+              "fieldOrder": 2,
+              "isActive": true,
+              "createdBy": "uuid",
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Custom Field",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/custom-fields/{{customFieldId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "custom-fields", "{{customFieldId}}"]
+        },
+        "description": "Delete a custom field. Access is restricted to Super Admin and Edition Admin only."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-fields/{{customFieldId}}"
+            }
+          },
+          "status": "No Content",
+          "code": 204,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Custom field deleted successfully",
+            "data": null,
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Custom Field Order",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fieldOrders\": [\n    {\n      \"id\": \"{{customFieldId}}\",\n      \"fieldOrder\": 1\n    },\n    {\n      \"id\": \"another_custom_field_id\",\n      \"fieldOrder\": 2\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/custom-fields/order",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "custom-fields", "order"]
+        },
+        "description": "Update the order of custom fields. Access is restricted to Super Admin and Edition Admin only."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-fields/order"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Custom field order updated successfully",
+            "data": {
+              "message": "Custom field order updated successfully"
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Custom Field Statistics",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/custom-fields/stats",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "custom-fields", "stats"]
+        },
+        "description": "Get statistics about custom fields. Access is scoped by user role:\n- Super Admin: Can see statistics for all custom fields\n- Edition Admin: Can see statistics for their edition\n- Company Admin: Can see statistics for their company\n- User: Can see statistics for their company"
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/custom-fields/stats"
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": {
+            "success": true,
+            "message": "Custom field statistics retrieved successfully",
+            "data": {
+              "totalFields": 25,
+              "mandatoryFields": 15,
+              "fieldTypeBreakdown": [
+                {
+                  "fieldType": "Text",
+                  "count": "10"
+                },
+                {
+                  "fieldType": "Number",
+                  "count": "5"
+                },
+                {
+                  "fieldType": "Date",
+                  "count": "3"
+                },
+                {
+                  "fieldType": "Dropdown",
+                  "count": "4"
+                },
+                {
+                  "fieldType": "Checkbox",
+                  "count": "3"
+                }
+              ]
+            },
+            "timestamp": "2024-01-01T00:00:00.000Z"
+          }
+        }
+      ]
+    }
+  ]
+} 
